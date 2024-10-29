@@ -8,7 +8,7 @@ enc <- readRDS("data/encounter_wca.RDS")
 colonies <- c("Robben", "Boulders", "Stony")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#       ---- Identify and subset birds 'belonging' colonies ----
+#       ---- Identify and subset birds 'belonging' to colonies ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Identify all birds 'belonging' to selected colonies because they were either 
 # (i) released at one of the colonies after being rehabilitated as chicks or
