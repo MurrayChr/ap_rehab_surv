@@ -110,25 +110,47 @@ multisite_birdyears <- multisite_birdyears %>%
   mutate(
     assigned_site =
       case_when(
-        any(!is.na(br_site)) & any(unique_sites==br_site) ~ br_site,
+        any(!is.na(br_site)) & any(unique_sites==br_site) ~ br_site,   
         any(!is.na(pref_site)) & any(unique_sites==pref_site) ~ pref_site,
-        all(is.na(br_site)) & all(is.na(pref_site)) ~ sample(unique_sites,1)
+        .default = sample(unique_sites,1),
       )
   ) %>%
   ungroup() 
+
+# to check that every bird-year has one and only one assigned site; uncomment 
+# and run following code, should be TRUE
+# multisite_birdyears %>%
+#   select( primary_id, year, assigned_site ) %>%
+#   distinct() %>%
+#   group_by( primary_id, year ) %>%
+#   summarise( exactly_one_assigned_site = n()==1 ) %>%
+#   ungroup() %>%
+#   pull( exactly_one_assigned_site ) %>%
+#   all()
 
 # save multisite_birdyears
 # saveRDS(multisite_birdyears, "outputs/00a_multisite_birdyears.RDS")
 
 # inspect the output of case_when() code used to create 'assigned_site' in
 # a small example:
-# test_msby <- tibble(
-#   primary_id = c("001", "001", "002", "002", "003", "003"),
-#   year = c(2021, 2021, 2019, 2019, 2023, 2023),
-#   unique_sites = rep(c("Stony", "Boulders"),3),
-#   n_sites = rep(2,6),
-#   br_site = c(NA, NA, "Boulders", "Boulders", NA, NA),
-#   pref_site = c(rep("Stony",4), rep(NA,2))
+# test_msby <- tribble(
+#   ~primary_id, ~year, ~unique_sites, ~br_site, ~pref_site,
+#   "001", 2017, "Stony", NA, NA,
+#   "001", 2017, "Boulders", NA, NA,
+#   "002", 2013, "Stony", "Robben", NA,
+#   "002", 2013, "Boulders", "Robben", NA,
+#   "003", 2015, "Stony", NA, "Robben", 
+#   "003", 2015, "Boulders", NA, "Robben", 
+#   "004", 2016, "Stony", "Robben", "Robben", 
+#   "004", 2016, "Boulders", "Robben", "Robben", 
+#   "005", 2016, "Stony", "Robben", "Stony", 
+#   "005", 2016, "Boulders", "Robben", "Stony", 
+#   "006", 2020, "Stony", "Stony", NA,
+#   "006", 2020, "Boulders", "Stony", NA,
+#   "007", 2019, "Stony", NA, "Boulders",
+#   "007", 2019, "Boulders", NA, "Boulders",
+#   "008", 2022, "Stony", "Stony", "Boulders",
+#   "008", 2022, "Boulders", "Stony", "Boulders"
 # )
 # test_msby %>%
 #   group_by( primary_id, year ) %>%
@@ -137,9 +159,7 @@ multisite_birdyears <- multisite_birdyears %>%
 #       case_when(
 #         any(!is.na(br_site)) & any(unique_sites==br_site) ~ br_site,
 #         any(!is.na(pref_site)) & any(unique_sites==pref_site) ~ pref_site,
-#         all(is.na(br_site)) & all(is.na(pref_site)) ~ sample(unique_sites,1)
+#         .default = str_c("Randomly chose ", sample(unique_sites,1))
 #       )
 #   ) %>%
 #   ungroup()
-
-
