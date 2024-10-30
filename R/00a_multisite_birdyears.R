@@ -104,6 +104,7 @@ multisite_birdyears <- left_join(
 
 # now use the info on breeding sites and preferred sites to assign a single site
 # to each multi-site bird-year according to the hierarchy described above
+# (see code to test this by inspection below)
 multisite_birdyears <- multisite_birdyears %>%
   group_by( primary_id, year ) %>%
   mutate(
@@ -115,6 +116,9 @@ multisite_birdyears <- multisite_birdyears %>%
       )
   ) %>%
   ungroup() 
+
+# save multisite_birdyears
+# saveRDS(multisite_birdyears, "outputs/00a_multisite_birdyears.RDS")
 
 # inspect the output of case_when() code used to create 'assigned_site' in
 # a small example:
@@ -137,4 +141,5 @@ multisite_birdyears <- multisite_birdyears %>%
 #       )
 #   ) %>%
 #   ungroup()
+
 
