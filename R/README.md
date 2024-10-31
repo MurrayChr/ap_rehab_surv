@@ -9,5 +9,5 @@ Files that contribute to a common task share a numerical prefix, e.g. "00" files
 
 #### Models without a hand-rearing covariate
 
--- **01a_fit_multiage_multisite_trap-dep.R** fits a multi-age, multi-site model incorporating trap-dependence (but not transience) in the 
+- **01a_fit_multiage_multisite_trap-dep.R** fits a multi-age, multi-site model incorporating trap-dependence (but not transience) in the 
 adult state.
