@@ -1,0 +1,157 @@
+//
+// Multi-age, multi-site model incorporating trap-dependence in the adult age class. 
+// Here we do not model transience in the adult age class. 
+// 
+// The treatment of trap-dependence follows Pradel and Sanz-Aguilar (2012). 
+// Transients are modelled using mixture models, with the 'mixture-of-marray'
+// implementation.
+// 
+// The model's states are defined to be:
+// 1 - Robben, 0yrs old, 
+// 2 - Robben, 1yrs old, 
+// 3 - Robben, 2+ yrs old, trap-aware, 
+// 4 - Robben, 2+ yrs old, trap-unaware, 
+// 5 - Boulders, 0yrs old, 
+// 6 - Boulders, 1yrs old, 
+// 7 - Boulders, 2+ yrs old, trap-aware, 
+// 8 - Boulders, 2+ yrs old, trap-unaware, 
+// 9 - Stony, 0yrs old, 
+// 10 - Stony, 1yrs old, 
+// 11 - Stony, 2+ yrs old, trap-aware, 
+// 12 - Stony, 2+ yrs old, trap-unaware, 
+//
+// Notation: suffices _R, _B, _S refer to "Robben", "Boulders", "Stony"
+//
+
+functions { 
+  matrix get_multinomial_probs(
+    data int T,
+    data real eps,
+    array[] vector phi_jv,
+    array[] vector phi_ad,
+    array[] vector m_jv,
+    array[] vector m_ad,
+    array[] vector p_im,
+    array[] vector p_ad_N,
+    array[] vector p_ad_A,
+    array[] vector p_ad_U
+    ) {
+    // matrix to store multinomial probabilities
+    matrix[12*(T-1), 12*(T-1)+1] pr = rep_matrix(0.0, 12*(T-1), 12*(T-1)+1);  
+
+    // auxillary matrices to define multinomial probabilities
+    array[T-1] matrix[12,12] gamma;  // transition matrices
+    array[T] matrix[12,2] omega;     // observation matrices
+    // define gamma
+    for (t in 1:(T-1)) {
+      // define 4x4 site blocks
+      for (I in 1:3) {     // I indexes source site
+        int first_i = 4*(I-1) + 1;
+        int last_i = 4*I;
+        for (J in 1:3) {   // J indexes destination site
+          int first_j = 4*(J-1) + 1;
+          int last_j = 4*J;
+          if (I==J) {  // remain at same site
+            gamma[t][first_i:last_i, first_j:last_j] = [
+              [ eps, phi_jv[I][t]*m_jv[I][J],                                    eps,                                        eps ],
+              [ eps,                     eps, phi_ad[I][t]*m_jv[I][J]*p_ad_N[J][t+1], phi_ad[I][t]*m_jv[I][J]*(1-p_ad_N[J][t+1]) ],
+              [ eps,                     eps, phi_ad[I][t]*m_ad[I][J]*p_ad_A[J][t+1], phi_ad[I][t]*m_ad[I][J]*(1-p_ad_A[J][t+1]) ],
+              [ eps,                     eps, phi_ad[I][t]*m_ad[I][J]*p_ad_U[J][t+1], phi_ad[I][t]*m_ad[I][J]*(1-p_ad_U[J][t+1]) ]
+            ];
+          } 
+          if (I!=J) {  // move to different site: only permitted if detected i.e. no transition into 'trap-unaware' state
+            gamma[t][first_i:last_i, first_j:last_j] = [
+              [ eps, phi_jv[I][t]*m_jv[I][J],                                    eps, eps ],
+              [ eps,                     eps, phi_ad[I][t]*m_jv[I][J]*p_ad_N[J][t+1], eps ],
+              [ eps,                     eps, phi_ad[I][t]*m_ad[I][J]*p_ad_A[J][t+1], eps ],
+              [ eps,                     eps, phi_ad[I][t]*m_ad[I][J]*p_ad_A[J][t+1], eps ]    // does p_ad_A make sense here?
+            ]
+          }
+        }
+      }
+    }
+    // define omega
+    for (t in 1:T) {
+      for (I in 1:3) {
+        int first_i = 4*(I-1) + 1;
+        int last_i = 4*I;
+        // define 4x2 site blocks
+        omega[t][first_i:last_i, 1:2] = [
+          [    1 - eps,          eps ],  // juv
+          [ p_im[I][t], 1-p_im[I][t] ],  // immature
+          [    1 - eps,          eps ],  // adult, trap-aware
+          [        eps,      1 - eps ],  // adult, trap-unaware
+        ];
+      }
+    }
+    // define entries of pr using matrix multiplication
+    for (I in 1:(T-1)) {  // block row index
+      for (J in I:(T-1)) {  // block column index
+        // row and column indices to define the 12x12 block
+        int i1 = 1 + 12*(I-1);
+        int i2 = 12*I;
+        int j1 = 1 + 12*(J-1);
+        int j2 = 12*J;
+        if (I == J) {  // diagonal block
+          pr[i1:i2, j1:j2] = diag_post_multiply(gamma[I], omega[I+1][:,1]);
+        }
+        else if (I < J) {  // above-diagonal block
+          matrix[12,12] temp = diag_post_multiply(gamma[I], omega[I+1][:,2]);
+          if ( (I+1) < J ) {
+            for (t in (I+1):(J-1)) {
+              temp = temp * diag_post_multiply(gamma[t], omega[t+1][:,2]);
+            }
+          }
+          pr[i1:i2, j1:j2] = temp * diag_post_multiply(gamma[J], omega[J+1][:,1]);
+        }
+      }
+    }
+    // enforce row-sum-to-one constraint
+    for (i in 1:(12*(T-1))){
+      pr[i, 12*(T-1)+1] = 1 - sum(pr[i, 1:12*(T-1)]);
+    }
+      return pr;
+    }
+}
+
+data {
+  int<lower=1> T;                                  // number of years
+  array[12*(T-1), 12*(T-1)+1] int<lower=0> marr;   // m-array
+}
+
+transformed data {
+  real<lower=0> eps = pow(10, -15);
+}
+
+parameters {
+  // time- and site-varying survival probabilities for juveniles (0 yrs old)
+  array[3] vector<lower=0, upper=1>[T-1] phi_jv;
+  // time- and site-varying survival probs for immatures, adults (1, 2+ yrs old)
+  array[3] vector<lower=0, upper=1>[T-1] phi_ad;
+  // time- and site-varying transience parameters for adults
+  // 'pir' are the proportion of 'residents' in each cohort 
+  array[3] vector<lower=0,upper=1>[T-1] pir;    // do we want transience at Robben? it didn't get flagged in the GOF...
+  // time- and site-varying detection for immatures
+  array[3] vector<lower=0, upper=1>[T] p_im;
+  // time-and site-varying, trap-dependent detection probabilities for 'resident' adults
+  array[3] vector<lower=0, upper=1>[T] p_ad_A;  // 'trap-aware'
+  array[3] vector<lower=0, upper=1>[T] p_ad_U;  // 'trap-unaware'
+  // time- and site-varying prob. of det. for newly matured adults (exactly 2 yrs old) 
+  array[3] vector<lower=0, upper=1>[T] p_ad_N;
+  // time-constant, age-dependent movement probabilities
+  array[3] simplex[3] m_jv;  // juvs, imms (0, 1 yrs old)
+  array[3] simplex[3] m_ad;  // adults (2+ yrs old)
+}
+
+model {
+  // calculate multinomial probabilities
+  matrix[12*(T-1), 12*(T-1)+1] pr;
+  pr = get_multinomial_probs(
+    T, eps, phi_jv, phi_ad, m_jv, m_ad, p_im, p_ad_N, p_ad_A, p_ad_U
+  ) 
+  // m-array capture-recapture likelihood
+  for (i in 1:(12*(T-1))) {
+    marr[i] ~ multinomial(pr[i]');
+  }
+}
+
