@@ -62,7 +62,7 @@ functions {
               [ eps,                     eps, phi_ad[I][t]*m_jv[I][J]*p_ad_N[J][t+1], eps ],
               [ eps,                     eps, phi_ad[I][t]*m_ad[I][J]*p_ad_A[J][t+1], eps ],
               [ eps,                     eps, phi_ad[I][t]*m_ad[I][J]*p_ad_A[J][t+1], eps ]    // does p_ad_A make sense here?
-            ]
+            ];
           }
         }
       }
@@ -77,7 +77,7 @@ functions {
           [    1 - eps,          eps ],  // juv
           [ p_im[I][t], 1-p_im[I][t] ],  // immature
           [    1 - eps,          eps ],  // adult, trap-aware
-          [        eps,      1 - eps ],  // adult, trap-unaware
+          [        eps,      1 - eps ]  // adult, trap-unaware
         ];
       }
     }
@@ -141,11 +141,13 @@ parameters {
 }
 
 model {
+  // default uniform priors on all probabilities
+  
   // calculate multinomial probabilities
   matrix[12*(T-1), 12*(T-1)+1] pr;
-  pr = get_multinomial_probs(
+  pr = get_multinomial_probs( 
     T, eps, phi_jv, phi_ad, m_jv, m_ad, p_im, p_ad_N, p_ad_A, p_ad_U
-  ) 
+  ); 
   // m-array capture-recapture likelihood
   for (i in 1:(12*(T-1))) {
     marr[i] ~ multinomial(pr[i]');
