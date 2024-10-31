@@ -1,10 +1,7 @@
 //
-// Multi-age, multi-site model incorporating trap-dependence in the adult age class. 
-// Here we do not model transience in the adult age class. 
-// 
-// The treatment of trap-dependence follows Pradel and Sanz-Aguilar (2012). 
-// Transients are modelled using mixture models, with the 'mixture-of-marray'
-// implementation.
+// Multi-age, multi-site model incorporating trap-dependence (but not 
+// transience) in the adult age class. The treatment of trap-dependence follows 
+// Pradel and Sanz-Aguilar (2012). 
 // 
 // The model's states are defined to be:
 // 1 - Robben, 0yrs old, 
