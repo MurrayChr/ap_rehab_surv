@@ -94,3 +94,112 @@ fit$summary("phi_jv") %>%
     panel.grid.major = element_line()
   ) + 
   labs( x= "year", y="estimate", title = "Juvenile survival")
+
+# plot the detection parameters for 'newly matured' adults 
+fit$summary("p_ad_N") %>%
+  mutate(
+    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
+    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
+    year = 2012 + t,
+    site = case_when(
+      site_index == 1 ~ "Robben",
+      site_index == 2 ~ "Boulders",
+      site_index == 3 ~ "Stony"
+    ),
+    xshift = 0.1*case_when(
+      site_index == 1 ~ -1,
+      site_index == 2 ~ 0,
+      site_index == 3 ~ 1
+    )
+  ) %>%
+  ggplot( aes(x=year+xshift, colour=site) ) +
+  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
+  scale_x_continuous( breaks=2013:2023 ) +
+  coord_cartesian( ylim=c(0,1) ) +
+  theme_classic() +
+  theme(
+    panel.grid.major = element_line()
+  ) + 
+  labs( x= "year", y="estimate", title = "Detection of newly-matured adults")
+
+# plot the detection parameters for 'trap-aware' adults
+fit$summary("p_ad_A") %>%
+  mutate(
+    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
+    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
+    year = 2012 + t,
+    site = case_when(
+      site_index == 1 ~ "Robben",
+      site_index == 2 ~ "Boulders",
+      site_index == 3 ~ "Stony"
+    ),
+    xshift = 0.1*case_when(
+      site_index == 1 ~ -1,
+      site_index == 2 ~ 0,
+      site_index == 3 ~ 1
+    )
+  ) %>%
+  ggplot( aes(x=year+xshift, colour=site) ) +
+  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
+  scale_x_continuous( breaks=2013:2023 ) +
+  coord_cartesian( ylim=c(0,1) ) +
+  theme_classic() +
+  theme(
+    panel.grid.major = element_line()
+  ) + 
+  labs( x= "year", y="estimate", title = "Detection of trap-aware adults")
+
+# plot the detection parameters for 'trap-unaware' adults
+fit$summary("p_ad_U") %>%
+  mutate(
+    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
+    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
+    year = 2012 + t,
+    site = case_when(
+      site_index == 1 ~ "Robben",
+      site_index == 2 ~ "Boulders",
+      site_index == 3 ~ "Stony"
+    ),
+    xshift = 0.1*case_when(
+      site_index == 1 ~ -1,
+      site_index == 2 ~ 0,
+      site_index == 3 ~ 1
+    )
+  ) %>%
+  ggplot( aes(x=year+xshift, colour=site) ) +
+  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
+  scale_x_continuous( breaks=2013:2023 ) +
+  coord_cartesian( ylim=c(0,1) ) +
+  theme_classic() +
+  theme(
+    panel.grid.major = element_line()
+  ) + 
+  labs( x= "year", y="estimate", title = "Detection of trap-unaware adults")
+
+# plot the detection parameters for 'newly matured' adults 
+fit$summary("p_ad_N") %>%
+  mutate(
+    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
+    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
+    year = 2012 + t,
+    site = case_when(
+      site_index == 1 ~ "Robben",
+      site_index == 2 ~ "Boulders",
+      site_index == 3 ~ "Stony"
+    ),
+    xshift = 0.1*case_when(
+      site_index == 1 ~ -1,
+      site_index == 2 ~ 0,
+      site_index == 3 ~ 1
+    )
+  ) %>%
+  ggplot( aes(x=year+xshift, colour=site) ) +
+  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
+  scale_x_continuous( breaks=2013:2023 ) +
+  coord_cartesian( ylim=c(0,1) ) +
+  theme_classic() +
+  theme(
+    panel.grid.major = element_line()
+  ) + 
+  labs( x= "year", y="estimate", title = "Detection of newly-matured adults")
+
