@@ -12,3 +12,6 @@ Files that contribute to a common task share a numerical prefix, e.g. "00" files
 
 - **01a_fit_multiage_multisite_trap-dep.R** fits a multi-age, multi-site model incorporating trap-dependence (but not transience) in the 
 adult states.
+
+- **01b_fn_sim_rep_data_multiage_multisite_trap-dep.R** contains a function to simulate replicate data under model '01_multiage_multisite_trap-dep.stan' fit to
+data '00b_cmr_data_multisite_multiage_trapdep.RDS', for use in posterior predictive checks.
