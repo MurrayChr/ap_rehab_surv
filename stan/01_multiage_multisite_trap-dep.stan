@@ -125,9 +125,6 @@ parameters {
   array[3] vector<lower=0, upper=1>[T-1] phi_jv;
   // time- and site-varying survival probs for immatures, adults (1, 2+ yrs old)
   array[3] vector<lower=0, upper=1>[T-1] phi_ad;
-  // time- and site-varying transience parameters for adults
-  // 'pir' are the proportion of 'residents' in each cohort 
-  array[3] vector<lower=0,upper=1>[T-1] pir;    // do we want transience at Robben? it didn't get flagged in the GOF...
   // time- and site-varying detection for immatures
   array[3] vector<lower=0, upper=1>[T] p_im;
   // time-and site-varying, trap-dependent detection probabilities for 'resident' adults
