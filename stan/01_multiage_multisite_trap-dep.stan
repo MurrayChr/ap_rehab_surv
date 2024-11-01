@@ -121,13 +121,12 @@ transformed data {
 }
 
 parameters {
-  // time- and site-varying survival probabilities for juveniles (0 yrs old)
-  array[3] vector<lower=0, upper=1>[T-1] phi_jv;
-  // time- and site-varying survival probs for immatures, adults (1, 2+ yrs old)
-  array[3] vector<lower=0, upper=1>[T-1] phi_ad;
+  // time- and site-varying survival probabilities  
+  array[3] vector<lower=0, upper=1>[T-1] phi_jv;   // for juveniles (0 yrs old)
+  array[3] vector<lower=0, upper=1>[T-1] phi_ad;   // for immatures, adults (1, 2+ yrs old)
   // time- and site-varying detection for immatures
   array[3] vector<lower=0, upper=1>[T] p_im;
-  // time-and site-varying, trap-dependent detection probabilities for 'resident' adults
+  // time-and site-varying, trap-dependent detection probabilities for adults
   array[3] vector<lower=0, upper=1>[T] p_ad_A;  // 'trap-aware'
   array[3] vector<lower=0, upper=1>[T] p_ad_U;  // 'trap-unaware'
   // time- and site-varying prob. of det. for newly matured adults (exactly 2 yrs old) 
@@ -139,7 +138,6 @@ parameters {
 
 model {
   // default uniform priors on all probabilities
-  
   // calculate multinomial probabilities
   matrix[12*(T-1), 12*(T-1)+1] pr;
   pr = get_multinomial_probs( 
