@@ -191,6 +191,15 @@ cmr_data <- cmr_data %>%
 # is 2013, this should return TRUE:
 # all(cmr_data$fc + 2013 - 1 == cmr_data$mark_year)
 
+# add code at first capture 
+# (used when simulating replicate data for posterior predictive checks)
+cmr_data <- cmr_data %>%
+  rowwise() %>%
+  mutate(
+    fc_code = c_across(starts_with("yr"))[fc],
+    .after=fc
+  )
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #          ---- Add hand-rearing information, checks, save ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
