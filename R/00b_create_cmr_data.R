@@ -121,6 +121,24 @@ bird_year_site <- bird_year_site %>%
     age_class = pmin( year-mark_year+marking_age, 3) 
   )
 
+# add marking site to dataframe
+marking_sites <- bird_year_site %>%
+  filter( year==mark_year ) %>%
+  select( primary_id, assigned_site ) %>%
+  rename(
+    marking_site = assigned_site
+  )
+bird_year_site <- left_join( bird_year_site, marking_sites, by="primary_id" ) %>%
+  relocate( marking_site, .after = assigned_site )
+
+# confirm that assigned_site and marking_site are the same in mark_year;
+# uncomment and run following; should be TRUE
+# bird_year_site %>%
+#   filter( year==mark_year ) %>%
+#   mutate( check = assigned_site==marking_site ) %>%
+#   pull( check ) %>%
+#   all()
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #       ---- Create multi-age, multi-site mark-recapture data ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -151,21 +169,21 @@ bird_year_site <- bird_year_site %>%
 
 # pivot wider to mark-recapture dataset 
 cmr_data <- bird_year_site %>%
-  select( primary_id, year, code, mark_year, marking_age ) %>%
+  select( primary_id, year, code, mark_year, marking_age, marking_site ) %>%
   group_by( primary_id ) %>%
   pivot_wider(
     names_from = year, names_prefix = "yr", names_sort = TRUE,
     values_from = code, values_fill = 0
   ) %>% 
   ungroup() %>% 
-  arrange( mark_year, marking_age, primary_id )
+  arrange( mark_year, marking_age, marking_site, primary_id )
 
 # add first capture 
 cmr_data <- cmr_data %>%
   rowwise() %>%
   mutate( 
     fc = min( which( c_across( starts_with("yr") )!=0 ) ),
-    .after = mark_year
+    .after = marking_site
   ) %>%
   ungroup()
 
