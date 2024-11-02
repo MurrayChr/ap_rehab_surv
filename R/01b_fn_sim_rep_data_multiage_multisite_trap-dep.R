@@ -103,23 +103,22 @@ sim_rep_cmr_data <- function( fit, draw, data_str ) {
   # create observation matrices (these work a bit differently than usual)
   obs <- list()
   for (t in 1:T) {
-    obs[[t]] <- matrix(NA, nrow=13, ncol=13)
+    obs[[t]] <- matrix(0, nrow=13, ncol=13)
+    # define diagonal blocks (off-diagonals in top-left 12x12 submatrix are zero)
     for (I in 1:3) {
       first_i <- 4*(I-1)+1
       last_i <- 4*I
-      for (J in 1:3) {
-        first_j <- 4*(J-1)+1
-        last_j <- 4*J
-        obs[[t]][first_i:last_i, first_j:last_j] <- matrix(
-          c(
-            1,         0, 0, 0,
-            0, p_im[I,t], 0, 0,
-            0,         0, 1, 0,
-            0,         0, 0, 0
-          ),
-          nrow=4, ncol=4, byrow=TRUE
-        )
-      }
+      first_j <- first_i
+      last_j <- last_i
+      obs[[t]][first_i:last_i, first_j:last_j] <- matrix(
+        c(
+          1,         0, 0, 0,
+          0, p_im[I,t], 0, 0,
+          0,         0, 1, 0,
+          0,         0, 0, 0
+        ),
+        nrow=4, ncol=4, byrow=TRUE
+      )
     }
     # bottom row for dead state
     obs[[t]][13,1:12] <- 0
