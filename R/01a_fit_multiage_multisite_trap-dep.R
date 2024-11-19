@@ -44,7 +44,7 @@ fit$diagnostic_summary()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                        ---- Plot estimates ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# fit <- readRDS("outputs/01a_multiage_multisite_trap-dep_fit.RDS")
+fit <- readRDS("outputs/01a_multiage_multisite_trap-dep_fit.RDS")
 
 # plot adult survival estimates
 fit$summary("phi_ad") %>%
@@ -90,6 +90,7 @@ fit$summary("phi_jv") %>%
       site_index == 3 ~ 1
     )
   ) %>%
+  filter(year<=2021) %>%
   ggplot( aes(x=year+xshift, colour=site) ) +
   geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
   scale_x_continuous( breaks=2013:2023 ) +
@@ -248,3 +249,100 @@ fit$draws(format = "df") %>%
     x = "Probability",
     fill = "Age class"
   )
+
+# plot faceted by site, coloured by age
+fit$summary(c("phi_jv","phi_ad")) %>%
+  mutate(
+    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
+    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
+    year = 2012 + t,
+    site = case_when(
+      site_index == 1 ~ "Robben",
+      site_index == 2 ~ "Boulders",
+      site_index == 3 ~ "Stony"
+    ),
+    age = str_extract(variable, "(?<=_)[a-z]+(?=\\[)"),
+    xshift = 0.1*case_when(
+      age == "jv" ~ -1,
+      age == "ad" ~ 1
+    )
+  ) %>%
+  filter(
+    year<=2022,
+    site %in% c("Robben", "Stony")
+  ) %>%
+  ggplot( aes(x=year+xshift, colour=age) ) +
+  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
+  scale_x_continuous( breaks=2013:2023 ) +
+  coord_cartesian( ylim=c(0,1) ) +
+  theme_classic() +
+  theme(
+    panel.grid.major = element_line()
+  ) + 
+  labs( x= "year", y="survival probability") +
+  facet_wrap(vars(site))
+ggsave("figs/01a_survival_estimates.pdf", height=5, width=12)
+
+# plot robben coloured by age
+fit$summary(c("phi_jv","phi_ad")) %>%
+  mutate(
+    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
+    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
+    year = 2012 + t,
+    site = case_when(
+      site_index == 1 ~ "Robben",
+      site_index == 2 ~ "Boulders",
+      site_index == 3 ~ "Stony"
+    ),
+    age = str_extract(variable, "(?<=_)[a-z]+(?=\\[)"),
+    xshift = 0.1*case_when(
+      age == "jv" ~ -1,
+      age == "ad" ~ 1
+    )
+  ) %>%
+  filter(
+    year<=2021,
+    site %in% c("Robben")
+  ) %>%
+  ggplot( aes(x=year+xshift, colour=age) ) +
+  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
+  scale_x_continuous( breaks=2013:2023 ) +
+  coord_cartesian( ylim=c(0,1) ) +
+  theme_classic() +
+  theme(
+    panel.grid.major = element_line()
+  ) + 
+  labs( x= "year", y="survival probability") 
+ggsave("figs/01a_survival_estimates_robben.png", height=4, width=6)
+
+# plot stony coloured by age
+fit$summary(c("phi_jv","phi_ad")) %>%
+  mutate(
+    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
+    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
+    year = 2012 + t,
+    site = case_when(
+      site_index == 1 ~ "Robben",
+      site_index == 2 ~ "Boulders",
+      site_index == 3 ~ "Stony"
+    ),
+    age = str_extract(variable, "(?<=_)[a-z]+(?=\\[)"),
+    xshift = 0.1*case_when(
+      age == "jv" ~ -1,
+      age == "ad" ~ 1
+    )
+  ) %>%
+  filter(
+    year<=2021,
+    site %in% c("Stony")
+  ) %>%
+  ggplot( aes(x=year+xshift, colour=age) ) +
+  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
+  scale_x_continuous( breaks=2013:2023 ) +
+  coord_cartesian( ylim=c(0,1) ) +
+  theme_classic() +
+  theme(
+    panel.grid.major = element_line()
+  ) + 
+  labs( x= "year", y="survival probability") 
+ggsave("figs/01a_survival_estimates_stony.png", height=4, width=6)
