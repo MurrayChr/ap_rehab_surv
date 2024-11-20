@@ -14,3 +14,6 @@ Files that contribute to a common task share a numerical prefix, e.g. "00" files
 adult states.
 
 - **01b_fn_sim_rep_data_multiage_multisite_trap-dep.R** contains three functions: `sim_cmr_data` simulates data under model `01_multiage_multisite_trap-dep.stan` given parameter values and a dataset structure, `get_pars_from_posterior` extracts and formats a posterior sample from a fit of this model, and `sim_rep_cmr_data` calls the first two functions to simulate a replicate dataset under the posterior predictive distribution of a particular fit of this model.
+
+-  **02a_fit_multiage_multisite_trap-dep_trans.R** fits a multi-age, multi-site model incorporating trap-dependence and transience in the 
+adult states.
