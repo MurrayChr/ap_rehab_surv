@@ -1,9 +1,9 @@
 # Functions to get contingency tables for tests 'WBWA', '3G.SR' and 'M.ITEC'
 # see Choquet et al U-CARE 2.2 User's Manual for details
 
-# Warning! this code is written to work with 
-# "data/00b_cmr_data_multisite_multiage_trapdep.RDS"
-# and may not work as expected using if called on other data.
+# Warning! 
+# This code is written to work with "data/00b_cmr_data_multisite_multiage_trapdep.RDS"
+# and may not work as expected with other data.
 library(tidyverse)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -216,6 +216,103 @@ get_M.ITEC_table <- function(cmr_data, occasion, nStates) {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                    ---- WBWA test of memory ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#' Considers all individuals seen on occasion i in state l that have been seen
+#' previously and will be seen again, and decomposes by last encounter state
+#' and next re-encounter state.
 
-
-
+get_WBWA_table <- function(cmr_data, occasion, state, nStates) {
+  # checks
+  T <- sum(str_starts(colnames(cmr_data),"yr"))
+  if (!(occasion %in% 2:(T-1))) {  
+    stop(str_c("Error: with ",T," years, occasion must be between 2 and ",T-1,"."))
+  }
+  codes <- cmr_data %>%
+    select(starts_with("yr")) %>%
+    unlist() %>%
+    unique()
+  if ((nStates+1) %in% codes) {
+    stop(str_c("Error: code ", nStates+1, " may have been used for non-encounters after first capture; ",
+               "please investigate and recode these as zeros if necessary."))
+  }
+  
+  # filter all individuals seen at given occasion in given state
+  yr_occ <- str_c("yr", 2012 + occasion)
+  cmr_data <- cmr_data %>%
+    filter(.data[[yr_occ]] == state)
+  
+  if (nrow(cmr_data) > 0) {
+    # add last capture if necessary
+    if (!("lc" %in% colnames(cmr_data))) {
+      cmr_data <- cmr_data %>%
+        rowwise() %>%
+        mutate(lc = max(which(c_across(starts_with("yr")) != 0))) %>%
+        ungroup()
+    }
+    
+    # filter for individuals seen before and after occasion
+    cmr_data <- cmr_data %>%
+      filter((fc < occasion) & (lc > occasion))
+    
+    if (nrow(cmr_data) > 0) {
+      # create variables for occasion of most recent release (strictly before 'occasion')
+      # and next re-encounter (strictly after 'occasion+1')
+      yrs_release <- str_c("yr", 2013:(2012 + occasion - 1))
+      yrs_next_reenc <- str_c("yr", (2012 + occasion + 1):(2012 + T))
+      cmr_data <- cmr_data %>%
+        rowwise() %>%
+        mutate(
+          occ_release = max(which(c_across(all_of(yrs_release))!=0)),
+          occ_next_reenc = occasion + 
+            min(which(c_across(all_of(yrs_next_reenc))!=0)) 
+        ) %>%
+        ungroup()
+      
+      # create variables for states at most recent release and next re-encounter
+      cmr_data <- cmr_data %>%
+        rowwise() %>%
+        mutate(
+          state_release = c_across(starts_with("yr"))[occ_release],
+          state_next_reenc = c_across(starts_with("yr"))[occ_next_reenc]
+        )
+      
+      # summarise
+      obs_summary <- cmr_data %>%
+        group_by(state_release, state_next_reenc) %>%
+        summarise(n = n(), .groups="drop") %>%
+        ungroup()
+      
+      # add many missing (state-release, state_next_reenc) cases
+      zero_tib <- tibble(
+        state_release = rep(1:12, each = 12),
+        state_next_reenc = rep(1:12, 12),
+        n = 0
+      )
+      
+      obs_summary <- left_join(
+        zero_tib, obs_summary, 
+        by=c("state_release", "state_next_reenc")) %>%
+        mutate(n = ifelse(is.na(n.y), n.x, n.y)) %>%
+        select(-contains("."))
+      
+      # order obs_summary so that it can be arranged in a table by row
+      obs_summary <- obs_summary %>%
+        arrange(state_release, state_next_reenc) 
+      
+      # format as table/matrix
+      observed <- obs_summary %>%
+        pull(n) %>%
+        matrix(nrow = nStates, ncol = nStates, byrow = TRUE) 
+      rownames(observed) <- str_c("prev.",1:nStates)
+      colnames(observed) <- str_c("next.",1:nStates)
+    }
+  }
+  
+  if (nrow(cmr_data) == 0) {
+    observed <- matrix(0, nrow = nStates, ncol = nStates) 
+    rownames(observed) <- str_c("prev.",1:nStates)
+    colnames(observed) <- str_c("next.",1:nStates)
+  }
+  
+  # return
+  observed
+}
