@@ -18,7 +18,7 @@ parameters {
   array[N_mix] simplex[N_comp] mix_wts;   // mixture weights
 }
 
-model {
+transformed parameters {
   // arrange cell probabilities in the rows of a matrix
   matrix[N_comp, M] p_comp_mat;
   for (i in 1:N_comp) {
@@ -30,7 +30,9 @@ model {
   for (i in 1:N_mix) {
     p_mix[i] = (mix_wts[i]' * p_comp_mat)';
   }
-  
+}
+
+model {
   // likelihood
   for (i in 1:N_comp) {
     Y_comp[i] ~ multinomial(p_comp[i]);
