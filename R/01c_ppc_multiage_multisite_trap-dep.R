@@ -40,10 +40,10 @@ for (i in 1:n_reps) {
 
 # set occasions and states for which we can calculate test components
 occasions <- 2:(T-1)
-states <- c(3,7,11) # adult states only
+states <- c(3, 7, 11) # adult states only
 
 # for each replicate dataset, calculate table of discrepancy measures 
-# for Test 3G.SR at occasions and states defined above
+# for Test 3G.SR at occasions and states defined above (~ 10 mins)
 stats_tables_3G.SR <- list()
 for (r in 1:n_reps) {
   # format replicate data for get_3G.SR_table()
@@ -93,20 +93,108 @@ for (occ in occasions) {
 }
 
 # Plot density of posterior replicate statistics and the real data statistics,
-# faceted by occasion and state
-test_3G.SR_replicates %>%
+# faceted by occasion and state (code to add vertical lines to each facet from
+# https://stackoverflow.com/questions/48593011/adding-grouped-geom-vline-to-multiple-facets)
+test_3G.SR_plot <- test_3G.SR_replicates %>%
   ggplot(aes(x = ft_stat)) +
   theme_classic() +
-  geom_density(fill="navyblue", alpha=0.5) +
-  geom_vline(data = test_3G.SR_real, aes(xintercept = ft_stat), colour = "red") +
-  facet_grid(occasion ~ state, scales = "free")
-# source for code to add vertical lines to each facet, see 
-# https://stackoverflow.com/questions/48593011/adding-grouped-geom-vline-to-multiple-facets
+  geom_density(fill="navyblue", alpha=0.3) +
+  geom_vline(
+    data = test_3G.SR_real, aes(xintercept = ft_stat), 
+    colour = "red", linetype = "dashed"
+  ) +
+  theme(
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank()
+  ) +
+  facet_grid(occasion ~ state, scales = "free") +
+  labs(
+    title = "Components of Test 3G.SR for 'transience'",
+    x = "Freeman-Tukey discrepancy measure"
+  )
+test_3G.SR_plot
+# ggsave("figs/01c_ppc_test_3G.SR.png", test_3G.SR_plot, scale = 1.5)
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                 ---- Test WBWA for memory ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# set occasions and states for which we can calculate test components
+occasions <- 2:(T-1)
+states <- c(3, 7, 11) # adult states only
+
+# for each replicate dataset, calculate table of discrepancy measures 
+# for Test WBWA at occasions and states defined above (~ 18 mins)
+stats_tables_WBWA <- list()
+for (r in 1:n_reps) {
+  # format replicate data for get_WBWA_table()
+  rep_data <- rep_data_list[[r]]
+  y <- rep_data$y
+  y[y==13] <- 0
+  colnames(y) <- str_c("yr", 2012 + 1:ncol(rep_data$y))
+  rep_cmr_data <- as_tibble(y) %>%
+    add_column(fc = data_str$fc)
+  
+  # initialise table of statistics for different occasions and states
+  temp <- tibble(
+    rep = r,
+    occasion = rep(occasions, length(states)),
+    state = rep(states, each = length(occasions)),
+    ft_stat = NA
+  )
+  for (occ in occasions) {
+    for (st in states) {
+      observed <- get_WBWA_table(rep_cmr_data, occasion = occ, state = st, nStates = 12)
+      expected <- get_expected_frequencies(observed)
+      temp$ft_stat[(temp$occasion == occ)&(temp$state == st)] <-
+        get_ft(observed, expected)
+    }
+  }
+  stats_tables_WBWA[[r]] <- temp
+}
+
+# bind all tables into one
+test_WBWA_replicates <- bind_rows(stats_tables_WBWA)
+
+# for the real data, calculate table of discrepancy measures for Test WBWA 
+# at occasions and states defined above
+test_WBWA_real <- tibble(
+  rep = NA,
+  occasion = rep(occasions, length(states)),
+  state = rep(states, each = length(occasions)),
+  ft_stat = NA
+)
+for (occ in occasions) {
+  for (st in states) {
+    observed <- get_WBWA_table(rep_cmr_data, occasion = occ, state = st, nStates = 12)
+    expected <- get_expected_frequencies(observed)
+    test_WBWA_real$ft_stat[(test_WBWA_real$occasion == occ) & (test_WBWA_real$state == st)] <-
+      get_ft(observed, expected)
+  }
+}
+
+# Plot density of posterior replicate statistics and the real data statistics,
+# faceted by occasion and state 
+test_WBWA_plot <- test_WBWA_replicates %>%
+  ggplot(aes(x = ft_stat)) +
+  theme_classic() +
+  geom_density(fill="navyblue", alpha=0.3) +
+  geom_vline(
+    data = test_WBWA_real, aes(xintercept = ft_stat), 
+    colour = "red", linetype = "dashed"
+  ) +
+  theme(
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank()
+  ) +
+  facet_grid(occasion ~ state, scales = "free") +
+  labs(
+    title = "Components of Test WBWA for 'memory'",
+    x = "Freeman-Tukey discrepancy measure"
+  )
+test_WBWA_plot
+# ggsave("figs/01c_ppc_test_WBWA.png", test_WBWA_plot, scale = 1.5)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #         ---- Test M.ITEC for immediate trap-dependence ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
