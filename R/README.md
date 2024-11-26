@@ -4,6 +4,8 @@
 Files that contribute to a common task share a numerical prefix, e.g. "00" files are all used to create mark-recapture datasets from the raw encounter data.
 
 #### Files to prepare mark-recapture datasets
+- **00_function_get_expected_frequencies** calculates expected cell frequencies for a contingency table under the null hypotheses of no difference between the rows (used for tests 3G.SR and WBWA)
+- **00_function_get_ft** calculates Freeman-Tukey discrepancy measure between observed and expected frequencies
 - **00_function_get_marray.R** converts suitably encoded capture history matrix into m-array representation (handles single and multistate cases)
 - **00_functions_get_gof_tables.R** construct component contingency tables for tests 3G.SR (transience), M.ITEC (trap-dependence) and WBWA (memory) from the capture histories (directly, not via an m-array). 
 - **00a_multisite_birdyears.R** finds all years in which a bird was encountered at more than one site ('multi-site bird-years'), and assigns a single site.
