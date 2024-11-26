@@ -1,8 +1,6 @@
 # Function to get point estimates for cell probabilities and mixture weights
 # in tests of mixtures (M.ITEC)
 # see Choquet et al U-CARE User Guide, section 5.5 for details
-library(cmdstanr)
-library(tidyverse)
 
 get_cell_probs_and_mixture_weights <- function(M, N_mix, N_comp, Y_comp, Y_mix) {
   # check dimensions
