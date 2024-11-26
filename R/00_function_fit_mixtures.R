@@ -20,7 +20,7 @@ get_cell_probs_and_mixture_weights <- function(M, N_mix, N_comp, Y_comp, Y_mix) 
   ml <- mod$optimize(stan_data)
   
   # format estimates in matrices 
-  cell_probs <- ml$summary("p_comp") %>%
+  cell_probs_comp <- ml$summary("p_comp") %>%
     mutate(
       row = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
       col = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") )
@@ -28,6 +28,15 @@ get_cell_probs_and_mixture_weights <- function(M, N_mix, N_comp, Y_comp, Y_mix) 
     arrange(row,col) %>%
     pull(estimate) %>%
     matrix(nrow = N_comp, ncol = M, byrow = TRUE)
+  
+  cell_probs_mix <- ml$summary("p_mix") %>%
+    mutate(
+      row = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
+      col = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") )
+    ) %>%
+    arrange(row,col) %>%
+    pull(estimate) %>%
+    matrix(nrow = N_mix, ncol = M, byrow = TRUE)
   
    mix_wts <- ml$summary("mix_wts") %>%
     mutate(
@@ -39,7 +48,11 @@ get_cell_probs_and_mixture_weights <- function(M, N_mix, N_comp, Y_comp, Y_mix) 
     matrix(nrow = N_mix, ncol = N_comp, byrow = TRUE)
   
   # output
-  list(cell_probs = cell_probs, mix_wts = mix_wts)
+  list(
+    cell_probs_comp = cell_probs_comp, 
+    cell_probs_mix = cell_probs_mix, 
+    mix_wts = mix_wts
+  )
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
