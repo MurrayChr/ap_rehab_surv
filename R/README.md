@@ -5,7 +5,7 @@ Files that contribute to a common task share a numerical prefix, e.g. "00" files
 
 #### Functions
 - **00_function_fit_mixtures** returns maximum likelihood estimates of multinomial cell probabilities and mixture probabilities for test M.ITEC of mixtures
-- 
+
 - **00_function_get_expected_frequencies** calculates expected cell frequencies for a contingency table under null hypotheses of no difference between the rows (used for tests 3G.SR and WBWA) or a mixture model (used for test M.ITEC)
 - **00_function_get_ft** calculates Freeman-Tukey discrepancy measure between observed and expected frequencies
 - **00_function_get_marray.R** converts suitably encoded capture history matrix into m-array representation (handles single and multistate cases)
