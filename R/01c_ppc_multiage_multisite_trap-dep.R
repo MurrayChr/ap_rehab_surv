@@ -1,10 +1,12 @@
 #' Posterior predictive checks of model fit for '01_multiage_multisite_trap-dep.stan' 
 #' to the data 'data/00b_cmr_data_multisite_multiage_trapdep.RDS'
 library(tidyverse)
+library(cmdstanr)
 source("R/01b_fn_sim_rep_data_multiage_multisite_trap-dep.R")
 source("R/00_functions_get_gof_tables.R")
 source("R/00_function_get_expected_frequencies.R")
 source("R/00_function_get_ft.R")
+source("R/00_function_fit_mixtures.R")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #       ---- Load real data and simulate replicate datasets ----
@@ -85,7 +87,7 @@ test_3G.SR_real <- tibble(
 )
 for (occ in occasions) {
   for (st in states) {
-    observed <- get_3G.SR_table(rep_cmr_data, occasion = occ, state = st, nStates = 12)
+    observed <- get_3G.SR_table(real_cmr_data, occasion = occ, state = st, nStates = 12)
     expected <- get_expected_frequencies(observed)
     test_3G.SR_real$ft_stat[(test_3G.SR_real$occasion == occ) & (test_3G.SR_real$state == st)] <-
       get_ft(observed, expected)
@@ -114,7 +116,6 @@ test_3G.SR_plot <- test_3G.SR_replicates %>%
   )
 test_3G.SR_plot
 # ggsave("figs/01c_ppc_test_3G.SR.png", test_3G.SR_plot, scale = 1.5)
-
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                 ---- Test WBWA for memory ----
@@ -167,7 +168,7 @@ test_WBWA_real <- tibble(
 )
 for (occ in occasions) {
   for (st in states) {
-    observed <- get_WBWA_table(rep_cmr_data, occasion = occ, state = st, nStates = 12)
+    observed <- get_WBWA_table(real_cmr_data, occasion = occ, state = st, nStates = 12)
     expected <- get_expected_frequencies(observed)
     test_WBWA_real$ft_stat[(test_WBWA_real$occasion == occ) & (test_WBWA_real$state == st)] <-
       get_ft(observed, expected)
@@ -195,6 +196,128 @@ test_WBWA_plot <- test_WBWA_replicates %>%
   )
 test_WBWA_plot
 # ggsave("figs/01c_ppc_test_WBWA.png", test_WBWA_plot, scale = 1.5)
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #         ---- Test M.ITEC for immediate trap-dependence ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# set occasions for which we can calculate a test statistic
+occasions <- 2:(T-2)
+
+# for each replicate dataset, calculate table of discrepancy measures 
+# for Test M.ITEC at occasions defined above 
+stats_tables_M.ITEC <- list()
+for (r in 1:n_reps) {
+  # format replicate data for get_M.ITEC_table()
+  rep_data <- rep_data_list[[r]]
+  y <- rep_data$y
+  y[y==13] <- 0
+  colnames(y) <- str_c("yr", 2012 + 1:ncol(rep_data$y))
+  rep_cmr_data <- as_tibble(y) %>%
+    add_column(fc = data_str$fc)
+
+  # initialise table of statistics for different occasions
+  temp <- tibble(
+    rep = r,
+    occasion = occasions,
+    ft_stat = NA
+  )
+  for (occ in occasions) {
+    # get observed tables and split into 'component' and 'mixture' parts
+    observed <- get_M.ITEC_table(rep_cmr_data, occ, nStates = 12)
+    obs_comp <- observed[str_starts(rownames(observed), "curr"), ]
+    obs_mix <- observed[str_starts(rownames(observed), "prev"), ]
+    
+    # remove zero rows from obs_comp and obs_mix
+    obs_comp <- obs_comp[rowSums(obs_comp) != 0, ]
+    obs_mix <- obs_mix[rowSums(obs_mix) != 0, ]
+    
+    # estimate cell probabilities and expected cell frequences for mixture model 
+    cell_probs <- get_cell_probs_and_mixture_weights(
+      M = ncol(obs_comp), N_mix = nrow(obs_mix), N_comp <- nrow(obs_comp),
+      Y_comp = obs_comp, Y_mix = obs_mix
+    )
+    expected <- get_expected_frequencies_mixtures(
+      obs_comp = obs_comp, obs_mix = obs_mix, 
+      cell_probs_comp = cell_probs$cell_probs_comp, 
+      cell_probs_mix = cell_probs$cell_probs_mix 
+    )
+    
+    # arrange observed and expected data in matrices such that the upper rows
+    # containg the 'mixture' part and lower rows the 'component' part
+    expected <- with(expected, rbind(expected_mix, expected_comp))
+    observed <- rbind(obs_mix, obs_comp)
+    if (!all(rownames(expected) == rownames(observed))) {
+      stop("Expected and observed matrices do not correspond.")
+    }
+    
+    # calculate freeman-tukey discrepancy
+    temp$ft_stat[temp$occasion == occ] <- get_ft(observed, expected)
+  }
+  stats_tables_M.ITEC[[r]] <- temp
+}
+
+# bind all tables into one
+test_M.ITEC_replicates <- bind_rows(stats_tables_M.ITEC)
+
+# for the real data, calculate table of discrepancy measures for Test M.ITEC 
+# at occasions and states defined above
+test_M.ITEC_real <- tibble(
+  rep = NA,
+  occasion = occasions,
+  ft_stat = NA
+)
+for (occ in occasions) {
+  # get observed tables and split into 'component' and 'mixture' parts
+  observed <- get_M.ITEC_table(real_cmr_data, occ, nStates = 12)
+  obs_comp <- observed[str_starts(rownames(observed), "curr"), ]
+  obs_mix <- observed[str_starts(rownames(observed), "prev"), ]
+  
+  # remove zero rows from obs_comp and obs_mix
+  obs_comp <- obs_comp[rowSums(obs_comp) != 0, ]
+  obs_mix <- obs_mix[rowSums(obs_mix) != 0, ]
+  
+  # estimate cell probabilities and expected cell frequences for mixture model 
+  cell_probs <- get_cell_probs_and_mixture_weights(
+    M = ncol(obs_comp), N_mix = nrow(obs_mix), N_comp <- nrow(obs_comp),
+    Y_comp = obs_comp, Y_mix = obs_mix
+  )
+  expected <- get_expected_frequencies_mixtures(
+    obs_comp = obs_comp, obs_mix = obs_mix, 
+    cell_probs_comp = cell_probs$cell_probs_comp, 
+    cell_probs_mix = cell_probs$cell_probs_mix 
+  )
+  
+  # arrange observed and expected data in matrices such that the upper rows
+  # containg the 'mixture' part and lower rows the 'component' part
+  expected <- with(expected, rbind(expected_mix, expected_comp))
+  observed <- rbind(obs_mix, obs_comp)
+  if (!all(rownames(expected) == rownames(observed))) {
+    stop("Expected and observed matrices do not correspond.")
+  }
+  
+  # calculate freeman-tukey discrepancy
+  test_M.ITEC_real$ft_stat[test_M.ITEC_real$occasion == occ] <- get_ft(observed, expected)
+}
+
+# Plot density of posterior replicate statistics and the real data statistics,
+# faceted by occasion and state 
+test_M.ITEC_plot <- test_M.ITEC_replicates %>%
+  ggplot(aes(x = ft_stat)) +
+  theme_classic() +
+  geom_density(fill="navyblue", alpha=0.3) +
+  geom_vline(
+    data = test_M.ITEC_real, aes(xintercept = ft_stat), 
+    colour = "red", linetype = "dashed"
+  ) +
+  theme(
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank()
+  ) +
+  facet_wrap(vars(occasion), scales = "free") +
+  labs(
+    title = "Components of Test M.ITEC for 'trap-dependence'",
+    x = "Freeman-Tukey discrepancy measure"
+  )
+test_M.ITEC_plot
+# ggsave("figs/01c_ppc_test_M.ITEC.png", test_M.ITEC_plot, scale = 1.5)
