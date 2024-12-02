@@ -160,6 +160,9 @@ transformed parameters {
 
 model {
   // default uniform priors on all probabilities
+  // vague priors on hand-rearing effects (on logit scale)
+  hr_jv ~ normal(0, 1);
+  hr_ad ~ normal(0, 1);
   // calculate multinomial probabilities
   matrix[12*(T-1), 12*(T-1)+1] pr_wr;
   matrix[12*(T-1), 12*(T-1)+1] pr_hr;
