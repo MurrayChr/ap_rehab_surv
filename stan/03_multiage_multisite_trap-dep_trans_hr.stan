@@ -52,22 +52,12 @@ functions {
         for (J in 1:3) {   // J indexes destination site
           int first_j = 4*(J-1) + 1;
           int last_j = 4*J;
-          if (I==J) {  // remain at same site
-            gamma[t][first_i:last_i, first_j:last_j] = [
-              [ eps, phi_jv[I][t]*m_jv[I][J],                                    eps,                                        eps ],
-              [ eps,                     eps, phi_ad[I][t]*m_jv[I][J]*p_ad_N[J][t+1], phi_ad[I][t]*m_jv[I][J]*(1-p_ad_N[J][t+1]) ],
-              [ eps,                     eps, phi_ad[I][t]*m_ad[I][J]*p_ad_A[J][t+1], phi_ad[I][t]*m_ad[I][J]*(1-p_ad_A[J][t+1]) ],
-              [ eps,                     eps, phi_ad[I][t]*m_ad[I][J]*p_ad_U[J][t+1], phi_ad[I][t]*m_ad[I][J]*(1-p_ad_U[J][t+1]) ]
-            ];
-          } 
-          if (I!=J) {  // move to different site: only permitted if detected i.e. no transition into 'trap-unaware' state
-            gamma[t][first_i:last_i, first_j:last_j] = [
-              [ eps, phi_jv[I][t]*m_jv[I][J],                                    eps, eps ],
-              [ eps,                     eps, phi_ad[I][t]*m_jv[I][J]*p_ad_N[J][t+1], eps ],
-              [ eps,                     eps, phi_ad[I][t]*m_ad[I][J]*p_ad_A[J][t+1], eps ],
-              [ eps,                     eps, phi_ad[I][t]*m_ad[I][J]*p_ad_A[J][t+1], eps ]    // does p_ad_A make sense here?
-            ];
-          }
+          gamma[t][first_i:last_i, first_j:last_j] = [
+            [ eps, phi_jv[I][t]*m_jv[I][J],                                    eps,                                        eps ],
+            [ eps,                     eps, phi_ad[I][t]*m_jv[I][J]*p_ad_N[J][t+1], phi_ad[I][t]*m_jv[I][J]*(1-p_ad_N[J][t+1]) ],
+            [ eps,                     eps, phi_ad[I][t]*m_ad[I][J]*p_ad_A[J][t+1], phi_ad[I][t]*m_ad[I][J]*(1-p_ad_A[J][t+1]) ],
+            [ eps,                     eps, phi_ad[I][t]*m_ad[I][J]*p_ad_U[J][t+1], phi_ad[I][t]*m_ad[I][J]*(1-p_ad_U[J][t+1]) ]
+          ];
         }
       }
     }
