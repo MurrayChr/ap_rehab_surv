@@ -40,8 +40,9 @@
 // 13 - not captured
 //
 // Important note: in calculating unique capture histories and their
-// multiplicities, individuals with different hand-rearing covariates but the
-// same history are treated as distinct because their likelihoods differ
+// multiplicities, individuals with the same history, but different hand-rearing 
+// covariate values must be treated as distinct because their likelihoods differ
+//
 
 functions {
   // create state transition matrices
@@ -57,9 +58,9 @@ functions {
     array[] vector p_ad_N
   ) {
     // convenience detection parameters
-    array[3] vector[T] q_ad_A,
-    array[3] vector[T] q_ad_U,
-    array[3] vector[T] q_ad_N,
+    array[3] vector[T] q_ad_A;
+    array[3] vector[T] q_ad_U;
+    array[3] vector[T] q_ad_N;
     for (s in 1:3){
       q_ad_A[s] = 1 - p_ad_A[s];
       q_ad_U[s] = 1 - p_ad_U[s];
@@ -93,7 +94,7 @@ functions {
                            1]';
       
     }
-    return Gamma
+    return Gamma;
   }
   
   // create observation matrices
@@ -130,26 +131,42 @@ functions {
       Omega[t][:,13] = [0, 1-p_im[1][t], 1, 0, 1,
                         0, 1-p_im[2][t], 1, 0, 1,
                         0, 1-p_im[3][t], 1, 0, 1,
-                        1]; 
+                        1]'; 
     }
     return Omega;
   }
 }
 
 data {
-  int<lower=1> T;                      // number of years
-  int<lower=1> N;                      // no. unique capture histories (see important note above)
-  array[N,T] int y;                    // unique captures histories (see important note above)
-  array[N] int<lower=1,upper=T-1> fc;  // first capture occasion
-  array[N] int fc_state;               // first capture state
-  array[N] int mult;                   // capture history multiplicity
-  array[N] int hr;                     // hand-rearing covariate
+  int<lower=1> T;                       // number of years
+  int<lower=1> N;                       // no. unique capture histories (see important note above)
+  array[N,T] int<lower=0, upper=13> y;  // unique captures histories (see important note above)
+  array[N] int<lower=1,upper=T-1> fc;   // first capture occasion
+  array[N] int fc_state;                // first capture state
+  array[N] int mult;                    // capture history multiplicity
+  array[N] int hr;                      // hand-rearing covariate
 }
 
 transformed data {
-  array[N] int fc_state_illegal = (fc_state%4 == 0) ? 1 : 0;
-  if (sum(fc_state_illegal)>0) {
-    reject("Cannot be trap-unaware at first capture.")
+  // check input data
+  for (n in 1:N) {
+    if (fc_state[n]%4 == 0) {
+      reject("Cannot be trap-unaware at first capture (codes 4, 8, 12).");
+    }
+  }
+  // create quotient and remainder for fc_state (once upfront, not in model block)
+  // the capture history codes 1,...,12 repeat in length 4 'blocks' per site
+  // so writing f=fc_state[n] as f = 4q + r for integers 0 <= q <= 2, 0 <= r <= 3
+  // gives the site (equal to q+1) and the state within site:
+  // r = 1 for juveniles
+  // r = 2 for immatures
+  // r = 3 for trap-aware adults
+  // r = 0 for trap-unaware adults
+  array[N] int<lower=0, upper=2> fc_state_q;
+  array[N] int<lower=0, upper=3> fc_state_r;
+  for (n in 1:N) {
+    fc_state_q[n] = fc_state[n] %/% 4;
+    fc_state_r[n] = fc_state[n] % 4;
   }
 }
 
@@ -185,48 +202,44 @@ transformed parameters {
 
 model {
   // get transition and emission matrices
-  array[] matrix Gamma_wr = ;
-  array[] matrix Gamma_hr = ;
-  array[] matrix Omega = ;
+  array[T-1] matrix[16,16] Gamma_wr = get_Gamma_matrices(
+    T, phi_jv_wr, phi_ad_wr, pi_r, m_jv, m_ad, p_ad_A, p_ad_U, p_ad_N );
+  array[T-1] matrix[16,16] Gamma_hr = get_Gamma_matrices(
+    T, phi_jv_hr, phi_ad_hr, pi_r, m_jv, m_ad, p_ad_A, p_ad_U, p_ad_N );
+  array[T] matrix[16,13] Omega = get_Omega_matrices( T, p_im );
   
   // default uniform priors on all probabilities
   // vague priors on hand-rearing effects (on logit scale)
   hr_jv ~ normal(0, 1);
   hr_ad ~ normal(0, 1);
   
+  // TO ADD - INFORMATIVE DIRICHLET PRIORS ON MOVEMENT SIMPLICES
+  
   // likelihood
   for (n in 1:N) {
     // initialise forward algorithm
     array[T] row_vector[16] fwd;
-    fwd[fc[n]] = rep_row_vector[16];
-    // take fc_state[n] and write it as f = 4d + r for integers 0 <= d <= 2, 0 <= r <= 3
-    // i. identify which block it's in i.e. the 'd' 
-    // ii. identify it's age and trap-awareness i.e. the 'r'
-    // iii. if r is 1, 2 it's juv/im and the index into fwd is ff = 5d + r and the
-    //      probability is 1
-    // iv. if r is 3 it's trap-aware adult and we split probability between 
-    //     5d + 3 (transient) and 5d + 5 (resident)
-    int d = fc_state[n] %/% 4;  // quotient in {0,1,2} = 'site - 1'
-    int r = fc_state[n]%4;      // remainder in {0,1,2,3}
-    if (r == 1) {  // juvenile 
-      fwd[fc[n]][5*d + r] = 1;
+    fwd[fc[n]] = rep_row_vector(0, 16);
+    if (fc_state_r[n] == 1) { // juvenile
+      fwd[fc[n]][5*fc_state_q[n] + fc_state_r[n]] = 1;
     }
-    if (r == 2) {  // immature  
-      fwd[fc[n]][5*d + r] = 1;
+    if (fc_state_r[n] == 2) {  // immature  
+      fwd[fc[n]][5*fc_state_q[n] + fc_state_r[n]] = 1;
     }
-    if (r == 3) {  // adult ('trap-aware')
-      fwd[fc[n]][5*d+3] = 1-pi_r[t];
-      fwd[fc[n]][5*d+5] = pi_r[t];
+    if (fc_state_r[n] == 3) { // adult ('trap-aware')
+      real res_prob = pi_r[fc_state_q[n]+1][fc[n]];
+      fwd[fc[n]][5*fc_state_q[n]+3] = 1-res_prob;  // transient adult
+      fwd[fc[n]][5*fc_state_q[n]+5] = res_prob;    // resident adult
     }
     // recursion
-    if (hr == 0) { // wild-raised
-      for (t in fc[n]:(T-1)) {
-        fwd[t+1] = fwd[t]*diag_post_multiply(Gamma_wr[t], Omega[t+1][:,y[n,t+1]]);
-      }
-    }
-    if (hr == 1) {  // hand-reared
+    if (hr[n] == 1) {  // hand-reared
       for (t in fc[n]:(T-1)) {
         fwd[t+1] = fwd[t]*diag_post_multiply(Gamma_hr[t], Omega[t+1][:,y[n,t+1]]);
+      }
+    }
+    if (hr[n] == 2) { // wild-raised
+      for (t in fc[n]:(T-1)) {
+        fwd[t+1] = fwd[t]*diag_post_multiply(Gamma_wr[t], Omega[t+1][:,y[n,t+1]]);
       }
     }
     // increment log-likelihood 
