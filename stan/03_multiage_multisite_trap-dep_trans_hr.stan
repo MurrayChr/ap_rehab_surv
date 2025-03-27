@@ -150,6 +150,13 @@ transformed parameters {
 
 model {
   // default uniform priors on all probabilities
+  // informative Dirichlet priors on movement simplices
+  m_jv[1] ~ dirichlet([7, 1.5, 1.5]);
+  m_jv[2] ~ dirichlet([1.5, 7, 1.5]);
+  m_jv[3] ~ dirichlet([1.5, 1.5, 7]);
+  m_ad[1] ~ dirichlet([8, 1, 1]);
+  m_ad[2] ~ dirichlet([1, 8, 1]);
+  m_ad[3] ~ dirichlet([1, 1, 8]);
   // vague priors on hand-rearing effects (on logit scale)
   hr_jv ~ normal(0, 1);
   hr_ad ~ normal(0, 1);
