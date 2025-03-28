@@ -234,7 +234,7 @@ model {
     if (fc_state_r[n] == 3) { // adult ('trap-aware')
       real res_prob = pi_r[fc_state_q[n]+1][fc[n]];
       fwd[fc[n]][5*fc_state_q[n]+3] = 1-res_prob;  // transient adult
-      fwd[fc[n]][5*fc_state_q[n]+5] = res_prob;    // resident adult
+      fwd[fc[n]][5*fc_state_q[n]+4] = res_prob;    // resident adult (trap-aware)
     }
     // recursion
     if (hr[n] == 1) {  // hand-reared
