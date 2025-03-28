@@ -220,8 +220,6 @@ model {
   hr_jv ~ normal(0, 1);
   hr_ad ~ normal(0, 1);
   
-  // TO ADD - INFORMATIVE DIRICHLET PRIORS ON MOVEMENT SIMPLICES
-  
   // likelihood
   for (n in 1:N) {
     // initialise forward algorithm
