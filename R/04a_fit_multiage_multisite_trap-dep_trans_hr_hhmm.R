@@ -55,49 +55,98 @@ file <- "stan/04_multiage_multisite_trap-dep_trans_hr_hhmm.stan"
 mod <- cmdstan_model(file)
 stan_data <- list(T=T, N=N_rr, y=y_rr, fc=fc_rr, fc_state=fc_state_rr, 
                   mult=mult_rr, hr=hr_rr)
-fit <- mod$sample(stan_data, parallel_chains = 4, 
-                  iter_warmup = 250, iter_sampling = 250, refresh = 10)
+# model takes approx ~2 hours to fit
+fit <- mod$sample(stan_data, parallel_chains = 4)
 # fit$save_object("outputs/04a_multiage_multisite_trap-dep_trans_hr_hhmm_fit.RDS")
 
 # diagnostic summary
 fit$diagnostic_summary()
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#                      ---- Plot estimates ----
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
-# load fitted model object 
-# fit <- readRDS("outputs/04a_multiage_multisite_trap-dep_trans_hr_hhmm_fit.RDS")
+#                   ---- Compare posteriors ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fit_hhmm <- readRDS("outputs/04a_multiage_multisite_trap-dep_trans_hr_hhmm_fit.RDS")
+fit_epm <- readRDS("outputs/03a_multiage_multisite_trap-dep_trans_hr_fit.RDS")
 
-# posteriors for hand-rearing effects (logit scale)
-fit$draws(c("hr_jv", "hr_ad"), format = "df") %>%
-  select(-starts_with(".")) %>%
-  pivot_longer(everything()) %>%
-  ggplot(aes(x=value, fill=name)) +
-  geom_density(alpha = 0.5) +
-  coord_cartesian(xlim = c(-1,1)) +
-  geom_vline(xintercept = 0, colour="grey", linetype = "dotted") +
-  scale_fill_manual(values=c("darkorange", "navyblue"), labels = c("adult", "juvenile"), name = "") +
-  theme_classic() +
-  theme(legend.position = "inside", legend.position.inside = c(0.7,0.85)) +
-  labs(
-    # title = "Age-specific hand-rearing effects",
-    x = "Hand-rearing effect (logit scale)", 
-    y = "Posterior density" 
-  )
-# ggsave("figs/03a_logit_hr_effects.png", height = 3, width = 5)
+# get all parameters common to two models (all parameters in this case)
+get_common_params <- function(fit_1, fit_2) {
+  params_1 <- fit_1$metadata()$model_params
+  params_2 <- fit_2$metadata()$model_params
+  intersect(params_1, params_2)
+}
+common_params <- get_common_params(fit_epm, fit_hhmm)
+common_params <- common_params[common_params != "lp__"]
 
-# what's 'the right' way to get posterior on the probability scale
-fit$draws(c("phi_ad_hr", "phi_ad_wr"), format = "df") %>%
-  mutate(
-    draw = .draw
-  ) %>%
-  select(!starts_with(".")) %>%
-  pivot_longer(-"draw") %>%
-  mutate(
-    par = str_extract(name, "[a-zA-Z_]+(?=\\[)"),
-    site_index = as.integer( str_extract(name, "(?<=\\[)[1-9](?=,)")  ),
-    t = as.integer( str_extract(name,"(?<=,)[0-9]+(?=\\])") )
-  ) %>% 
-  # maybe I need a reframe in here?
-  group_by(site_index, t, draw) %>%
-  pivot_wider(names_from = par, values_from = value)
+# format posterior draws and add model name
+prepare_draws <- function(fit, params, name) {
+  fit$draws(params, format = "df") %>%
+    add_column(lk = name) %>%
+    select(-starts_with(".")) %>%
+    pivot_longer(-"lk")
+}
+post_epm <- prepare_draws(fit_epm, common_params, "epm")
+post_hhmm <- prepare_draws(fit_hhmm, common_params, "hhmm")
+post <- rbind(post_epm, post_hhmm) 
+
+# plots comparing marginal posterior densities
+post %>%
+  filter(str_starts(name, "phi_ad")) %>%
+  ggplot(aes(x=value, colour=lk)) +
+  geom_density(bounds=c(0,1)) +
+  coord_cartesian(xlim=c(0,1)) +
+  theme_light() +
+  facet_wrap(vars(name), scales = "free") +
+  labs(title = "Adult survival probabilities")
+# ggsave("figs/04a_epm_vs_hhmm_phi_ad.pdf", scale = 5)
+
+post %>%
+  filter(str_starts(name, "phi_jv")) %>%
+  ggplot(aes(x=value, colour=lk)) +
+  geom_density(bounds=c(0,1)) +
+  coord_cartesian(xlim=c(0,1)) +
+  theme_light() +
+  facet_wrap(vars(name), scales = "free") +
+  labs(title = "Juvenile survival probabilities")
+# ggsave("figs/04a_epm_vs_hhmm_phi_jv.pdf", scale = 5)
+
+post %>%
+  filter(str_starts(name, "pi_r")) %>%
+  ggplot(aes(x=value, colour=lk)) +
+  geom_density(bounds=c(0,1)) +
+  coord_cartesian(xlim=c(0,1)) +
+  theme_light() +
+  facet_wrap(vars(name), scales = "free") +
+  labs(title = "Residency probabilities")
+# ggsave("figs/04a_epm_vs_hhmm_pi_r.pdf", scale = 5)
+
+post %>%
+  filter(str_starts(name, "m_")) %>%
+  ggplot(aes(x=value, colour=lk)) +
+  geom_density(bounds=c(0,1)) +
+  coord_cartesian(xlim=c(0,1)) +
+  theme_light() +
+  facet_wrap(vars(name), scales = "free") +
+  labs(title = "Movement probabilities")
+# ggsave("figs/04a_epm_vs_hhmm_movement.pdf", scale = 5)
+
+post %>%
+  filter(str_starts(name, "hr")) %>%
+  ggplot(aes(x=value, colour=lk)) +
+  geom_density() +
+  # coord_cartesian(xlim=c(0,1)) +
+  theme_light() +
+  facet_wrap(vars(name), scales = "free") +
+  labs(title = "Hand-rearing effects")
+# ggsave("figs/04a_epm_vs_hhmm_hr_effects.pdf", scale = 5)
+
+post %>%
+  filter(str_starts(name, "p_")) %>%
+  ggplot(aes(x=value, colour=lk)) +
+  geom_density(bounds=c(0,1)) +
+  coord_cartesian(xlim=c(0,1)) +
+  theme_light() +
+  facet_wrap(vars(name), scales = "free", ncol = 11) +
+  labs(title = "Detection probabilities")
+# ggsave("figs/04a_epm_vs_hhmm_detection_probs.pdf", scale = 5)
+
+
