@@ -104,9 +104,12 @@ fit$summary("phi_ad") %>%
   coord_cartesian( ylim=c(0,1) ) +
   theme_classic() +
   theme(
-    panel.grid.major = element_line()
+    panel.grid.major = element_line(),
+    legend.position.inside = TRUE,
+    legend.position = c(0.6, 0.25)
   ) + 
   labs( x= "year", y="estimate", title = "Adult survival")
+# ggsave("figs/02a_adult_survival_estimates.png", scale = 1.5)
 
 # plot juvenile survival estimates
 fit$summary("phi_jv") %>%
