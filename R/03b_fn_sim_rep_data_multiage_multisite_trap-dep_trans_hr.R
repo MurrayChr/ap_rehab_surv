@@ -97,14 +97,14 @@ sim_cmr_data <- function(pars, data_str) {
   # create transition matrices for wild-raised birds
   trans_wr <- list()
   for (t in 1:(T-1)) {
-    trans[[t]] <- matrix(NA, nrow=13, ncol=13, byrow=TRUE)
+    trans_wr[[t]] <- matrix(NA, nrow=13, ncol=13, byrow=TRUE)
     for (I in 1:3) {
       first_i <- 4*(I-1)+1 
       last_i <- 4*I  
       for (J in 1:3) {
         first_j <- 4*(J-1)+1
         last_j <- 4*J
-        trans[[t]][first_i:last_i, first_j:last_j] <- matrix(
+        trans_wr[[t]][first_i:last_i, first_j:last_j] <- matrix(
           c( 
             0, phi_jv_wr[I,t]*m_jv[I,J],                                   0,                                       0,
             0,                     0, phi_ad_wr[I,t]*m_jv[I,J]*p_ad_N[J,t+1], phi_ad_wr[I,t]*m_jv[I,J]*(1-p_ad_N[J,t+1]),
@@ -116,22 +116,22 @@ sim_cmr_data <- function(pars, data_str) {
       }
     }
     # bottom row for dead state
-    trans[[t]][13, 1:12] <- 0
+    trans_wr[[t]][13, 1:12] <- 0
     # enforce row-sum-to-one constraint
-    trans[[t]][,13] = 1 - rowSums(trans[[t]][,1:12])
+    trans_wr[[t]][,13] = 1 - rowSums(trans_wr[[t]][,1:12])
   }
   
   # create transition matrices for hand-reared birds
   trans_hr <- list()
   for (t in 1:(T-1)) {
-    trans[[t]] <- matrix(NA, nrow=13, ncol=13, byrow=TRUE)
+    trans_hr[[t]] <- matrix(NA, nrow=13, ncol=13, byrow=TRUE)
     for (I in 1:3) {
       first_i <- 4*(I-1)+1 
       last_i <- 4*I  
       for (J in 1:3) {
         first_j <- 4*(J-1)+1
         last_j <- 4*J
-        trans[[t]][first_i:last_i, first_j:last_j] <- matrix(
+        trans_hr[[t]][first_i:last_i, first_j:last_j] <- matrix(
           c( 
             0, phi_jv_hr[I,t]*m_jv[I,J],                                   0,                                       0,
             0,                     0, phi_ad_hr[I,t]*m_jv[I,J]*p_ad_N[J,t+1], phi_ad_hr[I,t]*m_jv[I,J]*(1-p_ad_N[J,t+1]),
@@ -143,9 +143,9 @@ sim_cmr_data <- function(pars, data_str) {
       }
     }
     # bottom row for dead state
-    trans[[t]][13, 1:12] <- 0
+    trans_hr[[t]][13, 1:12] <- 0
     # enforce row-sum-to-one constraint
-    trans[[t]][,13] = 1 - rowSums(trans[[t]][,1:12])
+    trans_hr[[t]][,13] = 1 - rowSums(trans_hr[[t]][,1:12])
   }
   
   # create observation matrices (these work a bit differently than usual)
@@ -204,8 +204,14 @@ sim_cmr_data <- function(pars, data_str) {
         }
       }
     } else {
-      for (t in fc[i]:(T-1)) {
-        z[i, t+1] <- sample(1:13, 1, prob=trans[[t]][z[i,t], ])
+      if (hr[i] == 1) {
+        for (t in fc[i]:(T-1)) {
+          z[i, t+1] <- sample(1:13, 1, prob=trans_hr[[t]][z[i,t], ])
+        }
+      } else {
+        for (t in fc[i]:(T-1)) {
+          z[i, t+1] <- sample(1:13, 1, prob=trans_wr[[t]][z[i,t], ])
+        }
       }
     } 
   }
@@ -219,7 +225,22 @@ sim_cmr_data <- function(pars, data_str) {
   }
   
   # return
-  list(fc=fc, fc_code=fc_code, z=z, y=y)
+  truth <- list(
+    "phi_jv_wr" = phi_jv_wr,
+    "phi_ad_wr" = phi_ad_wr,
+    "phi_jv_hr" = phi_jv_hr,
+    "phi_ad_hr" = phi_ad_hr,
+    "hr_ad" = hr_ad,
+    "hr_jv" = hr_jv,
+    "pi_r" = pi_r,
+    "p_im" = p_im,
+    "p_ad_A" = p_ad_A,
+    "p_ad_U" = p_ad_U,
+    "p_ad_N" = p_ad_N,
+    "m_jv" = m_jv,
+    "m_ad" = m_ad
+  )
+  return(list(truth=truth, fc=fc, fc_code=fc_code, hr=hr, z=z, y=y))
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
