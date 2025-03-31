@@ -91,12 +91,19 @@ for (i in 1:3) {
 file <- "stan/03_multiage_multisite_trap-dep_trans_hr.stan"
 mod <- cmdstan_model(file)
 stan_data <- list(T=T, marr_wr=marr_wr, marr_hr = marr_hr, N_1=N_1, N_0=N_0)
-fit <- mod$sample(stan_data, parallel_chains = 4) 
+fit <- mod$sample(stan_data, parallel_chains = 4)
 # fit$save_object("outputs/03a_multiage_multisite_trap-dep_trans_hr_fit.RDS")
 
 # diagnostic summary
 fit$diagnostic_summary()
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#                      ---- Plot estimates ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+# load fitted model object 
+# fit <- readRDS("outputs/03a_multiage_multisite_trap-dep_trans_hr_fit.RDS")
+
+# posteriors for hand-rearing coefficient (logit scale)
 fit$draws(c("hr_jv", "hr_ad"), format = "df") %>%
   select(-starts_with(".")) %>%
   pivot_longer(everything()) %>%
@@ -104,4 +111,11 @@ fit$draws(c("hr_jv", "hr_ad"), format = "df") %>%
   geom_density(alpha = 0.5) +
   coord_cartesian(xlim = c(-1,1)) +
   geom_vline(xintercept = 0, colour="grey", linetype = "dotted") +
-  theme_classic()
+  scale_fill_manual(values=c("darkorange", "navyblue"), labels = c("adult", "juvenile"), name = "") +
+  theme_classic() +
+  theme(legend.position = "inside", legend.position.inside = c(0.7,0.85)) +
+  labs(
+    # title = "Age-specific hand-rearing effects",
+    x = "Hand-rearing coefficient (logit scale)", 
+    y = "Posterior density" 
+)
