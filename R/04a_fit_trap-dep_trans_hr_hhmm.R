@@ -56,7 +56,7 @@ mod <- cmdstan_model(file)
 stan_data <- list(T=T, N=N_rr, y=y_rr, fc=fc_rr, fc_state=fc_state_rr, 
                   mult=mult_rr, hr=hr_rr)
 fit <- mod$sample(stan_data, parallel_chains = 4)
-# fit$save_object("outputs/04a_trap-dep_trans_hr_hhmm_fit.RDS")
+# fit$save_object("outputs/04a_td_tr_hr_hhmm_fit.RDS")
 
 # diagnostic summary
 fit$diagnostic_summary()
