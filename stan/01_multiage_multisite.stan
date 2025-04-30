@@ -1,0 +1,133 @@
+//
+// Multi-age, multi-site model (without trap-dependence or transience). 
+// 
+// The model's states are defined to be:
+// 1 - Robben, 0yrs old, 
+// 2 - Robben, 1yrs old, 
+// 3 - Robben, 2+ yrs old 
+// 4 - Boulders, 0yrs old, 
+// 5 - Boulders, 1yrs old, 
+// 6 - Boulders, 2+ yrs old, 
+// 7 - Stony, 0yrs old, 
+// 8 - Stony, 1yrs old, 
+// 9 - Stony, 2+ yrs old, 
+//
+
+functions { 
+  matrix get_multinomial_probs(
+    data int T,
+    data real eps,
+    array[] vector phi_jv,
+    array[] vector phi_ad,
+    array[] vector m_jv,
+    array[] vector m_ad,
+    array[] vector p_im,
+    array[] vector p_ad
+    ) {
+    // matrix to store multinomial probabilities
+    matrix[9*(T-1), 9*(T-1)+1] pr = rep_matrix(0.0, 9*(T-1), 9*(T-1)+1);  
+
+    // auxillary matrices to define multinomial probabilities
+    array[T-1] matrix[9,9] gamma;  // transition matrices
+    array[T] matrix[9,2] omega;     // observation matrices
+    // define gamma
+    for (t in 1:(T-1)) {
+      // define 3x3 site blocks
+      for (I in 1:3) {     // I indexes source site
+        int first_i = 3*(I-1) + 1;
+        int last_i = 3*I;
+        for (J in 1:3) {   // J indexes destination site
+          int first_j = 3*(J-1) + 1;
+          int last_j = 3*J;
+          gamma[t][first_i:last_i, first_j:last_j] = [
+            [ eps, phi_jv[I][t]*m_jv[I][J],                     eps],
+            [ eps,                     eps, phi_ad[I][t]*m_jv[I][J]],
+            [ eps,                     eps, phi_ad[I][t]*m_ad[I][J]]
+          ];
+        }
+      }
+    }
+    // define omega
+    for (t in 1:T) {
+      for (I in 1:3) {
+        int first_i = 3*(I-1) + 1;
+        int last_i = 3*I;
+        // define 3x2 site blocks
+        omega[t][first_i:last_i, 1:2] = [
+          [    1 - eps,          eps ],  // juv
+          [ p_im[I][t], 1-p_im[I][t] ],  // immature
+          [ p_ad[I][t], 1-p_ad[I][t] ]  // adult
+        ];
+      }
+    }
+    // define entries of pr using matrix multiplication
+    for (I in 1:(T-1)) {  // block row index
+      for (J in I:(T-1)) {  // block column index
+        // row and column indices to define the 9x9 block
+        int i1 = 1 + 9*(I-1);
+        int i2 = 9*I;
+        int j1 = 1 + 9*(J-1);
+        int j2 = 9*J;
+        if (I == J) {  // diagonal block
+          pr[i1:i2, j1:j2] = diag_post_multiply(gamma[I], omega[I+1][:,1]);
+        }
+        else if (I < J) {  // above-diagonal block
+          matrix[9,9] temp = diag_post_multiply(gamma[I], omega[I+1][:,2]);
+          if ( (I+1) < J ) {
+            for (t in (I+1):(J-1)) {
+              temp = temp * diag_post_multiply(gamma[t], omega[t+1][:,2]);
+            }
+          }
+          pr[i1:i2, j1:j2] = temp * diag_post_multiply(gamma[J], omega[J+1][:,1]);
+        }
+      }
+    }
+    // enforce row-sum-to-one constraint
+    for (i in 1:(9*(T-1))){
+      pr[i, 9*(T-1)+1] = 1 - sum(pr[i, 1:9*(T-1)]);
+    }
+      return pr;
+    }
+}
+
+data {
+  int<lower=1> T;                                // number of years
+  array[9*(T-1), 9*(T-1)+1] int<lower=0> marr;   // m-array
+}
+
+transformed data {
+  real<lower=0> eps = pow(10, -15);
+}
+
+parameters {
+  // time- and site-varying survival probabilities  
+  array[3] vector<lower=0, upper=1>[T-1] phi_jv;   // for juveniles (0 yrs old)
+  array[3] vector<lower=0, upper=1>[T-1] phi_ad;   // for immatures, adults (1, 2+ yrs old)
+  // time- and site-varying detection for immatures and adults
+  array[3] vector<lower=0, upper=1>[T] p_im;
+  array[3] vector<lower=0, upper=1>[T] p_ad;  
+  // time-constant, age-dependent movement probabilities
+  array[3] simplex[3] m_jv;  // juvs, imms (0, 1 yrs old)
+  array[3] simplex[3] m_ad;  // adults (2+ yrs old)
+}
+
+model {
+  // default uniform priors on all probabilities
+  // informative Dirichlet priors on movement simplices
+  m_jv[1] ~ dirichlet([7, 1.5, 1.5]);
+  m_jv[2] ~ dirichlet([1.5, 7, 1.5]);
+  m_jv[3] ~ dirichlet([1.5, 1.5, 7]);
+  m_ad[1] ~ dirichlet([8, 1, 1]);
+  m_ad[2] ~ dirichlet([1, 8, 1]);
+  m_ad[3] ~ dirichlet([1, 1, 8]);
+  // calculate multinomial probabilities
+  matrix[9*(T-1), 9*(T-1)+1] pr;
+  pr = get_multinomial_probs( 
+    T, eps, phi_jv, phi_ad, m_jv, m_ad, p_im, p_ad
+  ); 
+  // m-array capture-recapture likelihood
+  for (i in 1:(9*(T-1))) {
+    marr[i] ~ multinomial(pr[i]');
+  }
+}
+
