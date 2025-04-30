@@ -1,6 +1,6 @@
 #' Simulate cmr data under the multi-age, multi-site model 
-#' '03_multiage_multisite_trap-dep_trans_hr.stan' that incorporates trap-dependence
-#' and transience and a hand-rearing covariate on adult and juvenile survival.
+#' '04_td_tr_hr.stan' that incorporates trap-dependence and transience and a 
+#' hand-rearing covariate on adult and juvenile survival.
 #' The code is factored so that data can be simulated under the model either
 #'  (i) using parameter values from a posterior draw of the fit model and the 
 #'  structure of the dataset to which it was fit (for posterior predictive checks),
@@ -10,7 +10,7 @@
 library(tidyverse)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# ---- Function to sim data under '03_multiage_multisite_trap-dep_trans_hr.stan' ----
+#     ---- Function to sim data under '04_td_tr_hr.stan' ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #' The function arguments are:
@@ -248,7 +248,7 @@ sim_cmr_data <- function(pars, data_str) {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # function arguments:
-# 'fit' - a cmdstanr fit of model '02_multiage_multisite_trap-dep_trans.stan'
+# 'fit' - a cmdstanr fit of model '04_td_tr_hr.stan'
 # 'draw' - a positive integer (usually between 1 and 4000) 
 
 get_pars_from_posterior <- function( fit, draw ) {
