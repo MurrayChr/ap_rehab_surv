@@ -2,7 +2,9 @@
 // Multi-age, multi-site model incorporating trap-dependence and transience in the
 // adult age class. The treatment of trap-dependence follows Pradel and Sanz-Aguilar (2012). 
 //
-// Here we distinguish immature survival from adult survival.
+// Here we 
+//   (i) incorporate constant hand-rearing effects on adult and juvenile survival
+//   (ii) distinguish immature survival from adult survival
 // 
 // The model's states are defined to be:
 // 1 - Robben, 0yrs old, 
