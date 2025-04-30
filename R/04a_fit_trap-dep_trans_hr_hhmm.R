@@ -50,14 +50,13 @@ for (n in 1:N_rr) {
 #                      ---- Fit the model ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# compile and fit
-file <- "stan/04_multiage_multisite_trap-dep_trans_hr_hhmm.stan"
+# compile and fit (~ 2 hours)
+file <- "stan/04_td_tr_hr_hhmm.stan"
 mod <- cmdstan_model(file)
 stan_data <- list(T=T, N=N_rr, y=y_rr, fc=fc_rr, fc_state=fc_state_rr, 
                   mult=mult_rr, hr=hr_rr)
-# model takes approx ~2 hours to fit
 fit <- mod$sample(stan_data, parallel_chains = 4)
-# fit$save_object("outputs/04a_multiage_multisite_trap-dep_trans_hr_hhmm_fit.RDS")
+# fit$save_object("outputs/04a_trap-dep_trans_hr_hhmm_fit.RDS")
 
 # diagnostic summary
 fit$diagnostic_summary()
@@ -65,8 +64,8 @@ fit$diagnostic_summary()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                   ---- Compare posteriors ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-fit_hhmm <- readRDS("outputs/04a_multiage_multisite_trap-dep_trans_hr_hhmm_fit.RDS")
-fit_epm <- readRDS("outputs/03a_multiage_multisite_trap-dep_trans_hr_fit.RDS")
+fit_hhmm <- readRDS("outputs/04a_td_tr_hr_hhmm_fit.RDS")
+fit_epm <- readRDS("outputs/04a_td_tr_hr_fit.RDS")
 
 # get all parameters common to two models (all parameters in this case)
 get_common_params <- function(fit_1, fit_2) {
@@ -97,7 +96,6 @@ post %>%
   theme_light() +
   facet_wrap(vars(name), scales = "free") +
   labs(title = "Adult survival probabilities")
-# ggsave("figs/04a_epm_vs_hhmm_phi_ad.pdf", scale = 5)
 
 post %>%
   filter(str_starts(name, "phi_jv")) %>%
@@ -107,7 +105,6 @@ post %>%
   theme_light() +
   facet_wrap(vars(name), scales = "free") +
   labs(title = "Juvenile survival probabilities")
-# ggsave("figs/04a_epm_vs_hhmm_phi_jv.pdf", scale = 5)
 
 post %>%
   filter(str_starts(name, "pi_r")) %>%
@@ -117,7 +114,6 @@ post %>%
   theme_light() +
   facet_wrap(vars(name), scales = "free") +
   labs(title = "Residency probabilities")
-# ggsave("figs/04a_epm_vs_hhmm_pi_r.pdf", scale = 5)
 
 post %>%
   filter(str_starts(name, "m_")) %>%
@@ -127,7 +123,6 @@ post %>%
   theme_light() +
   facet_wrap(vars(name), scales = "free") +
   labs(title = "Movement probabilities")
-# ggsave("figs/04a_epm_vs_hhmm_movement.pdf", scale = 5)
 
 post %>%
   filter(str_starts(name, "hr")) %>%
@@ -137,7 +132,6 @@ post %>%
   theme_light() +
   facet_wrap(vars(name), scales = "free") +
   labs(title = "Hand-rearing effects")
-# ggsave("figs/04a_epm_vs_hhmm_hr_effects.pdf", scale = 5)
 
 post %>%
   filter(str_starts(name, "p_")) %>%
@@ -147,6 +141,5 @@ post %>%
   theme_light() +
   facet_wrap(vars(name), scales = "free", ncol = 11) +
   labs(title = "Detection probabilities")
-# ggsave("figs/04a_epm_vs_hhmm_detection_probs.pdf", scale = 5)
 
 
