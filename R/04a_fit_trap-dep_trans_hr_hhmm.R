@@ -1,5 +1,5 @@
 #' Fit model with additive hand-rearing effect on survival (the same model as in
-#' 03a_...), but using a hierarchical hidden Markov model likelihood.
+#' 04a_fit_trap-dep_trans_hr.R), but using a hierarchical hidden Markov model likelihood.
 library(tidyverse)
 library(cmdstanr)
 

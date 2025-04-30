@@ -88,7 +88,7 @@ for (i in 1:3) {
 #                      ---- Fit the model ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# compile and fit (~ minutes)
+# compile and fit (~ 16 minutes)
 file <- "stan/04_td_tr_hr.stan"
 mod <- cmdstan_model(file)
 stan_data <- list(T=T, marr_wr=marr_wr, marr_hr = marr_hr, N_1=N_1, N_0=N_0)
@@ -102,7 +102,7 @@ fit$diagnostic_summary()
 #                      ---- Plot estimates ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 # load fitted model object 
-# fit <- readRDS("outputs/04a_td_tr_hr_fit.RDS")
+fit <- readRDS("outputs/04a_td_tr_hr_fit.RDS")
 
 # posteriors for hand-rearing coefficient (logit scale)
 fit$draws(c("hr_jv", "hr_ad"), format = "df") %>%
