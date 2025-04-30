@@ -1,4 +1,5 @@
-# Fit model with additive hand-rearing effect on survival
+# Fit model with trap-dependence, transience and additive hand-rearing effect 
+# on survival
 library(tidyverse)
 library(cmdstanr)
 source("R/00_function_get_marray.R")
@@ -63,7 +64,7 @@ prepare_cmr_data <- function(cmr_data_for_marr) {
 y_wr <- prepare_cmr_data(cmr_data_for_marr_wr)
 y_hr <- prepare_cmr_data(cmr_data_for_marr_hr)
 
-# m-array for model '02_multiage_multisite_trap-dep_trans.stan' which has 12 states
+# m-array for model '04_td_tr_hr.stan' which has 12 states for each hand-rearing category
 # states 4,8,12 are unobservable so the warning about their absence can be safely ignored
 marr_wr <- get_marray(y_wr, nStates=12)
 marr_hr <- get_marray(y_hr, nStates=12)
@@ -87,12 +88,12 @@ for (i in 1:3) {
 #                      ---- Fit the model ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# compile and fit
-file <- "stan/03_multiage_multisite_trap-dep_trans_hr.stan"
+# compile and fit (~ minutes)
+file <- "stan/04_td_tr_hr.stan"
 mod <- cmdstan_model(file)
 stan_data <- list(T=T, marr_wr=marr_wr, marr_hr = marr_hr, N_1=N_1, N_0=N_0)
 fit <- mod$sample(stan_data, parallel_chains = 4)
-# fit$save_object("outputs/03a_multiage_multisite_trap-dep_trans_hr_fit.RDS")
+# fit$save_object("outputs/04a_td_tr_hr_fit.RDS")
 
 # diagnostic summary
 fit$diagnostic_summary()
@@ -101,7 +102,7 @@ fit$diagnostic_summary()
 #                      ---- Plot estimates ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 # load fitted model object 
-# fit <- readRDS("outputs/03a_multiage_multisite_trap-dep_trans_hr_fit.RDS")
+# fit <- readRDS("outputs/04a_td_tr_hr_fit.RDS")
 
 # posteriors for hand-rearing coefficient (logit scale)
 fit$draws(c("hr_jv", "hr_ad"), format = "df") %>%
