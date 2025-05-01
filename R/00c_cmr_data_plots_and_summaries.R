@@ -250,10 +250,12 @@ total_tib %>%
     labels = str_c("'",13:23)
   ) +
   scale_fill_discrete(
-    labels = c("wild-raised", "hand-reared")
+    breaks = c("1", "0"),
+    labels = c("1" = "hand-reared", "0" = "wild-raised")
   ) +
   theme(
     panel.grid.major = element_line(linewidth = 0.25),
+    legend.position.inside = TRUE,
     legend.position = c(0.875, 0.2),
     legend.title = element_blank()
   ) +
@@ -262,3 +264,4 @@ total_tib %>%
     x = "Year"
   ) +
   facet_grid(age ~ site)
+# ggsave("figs/00c_numbers_known_to_be_alive.png", scale = 1.8)
