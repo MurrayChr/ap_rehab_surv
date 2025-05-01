@@ -67,6 +67,198 @@ lc <- apply(y, 1, function(x) max(which(x!=0)))
 sum(fc + 2 <= lc) # number detected as adults
 100*mean(fc + 2 <= lc)/length(fc) # as a proportion of total
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#      ---- Numbers known to be alive and in a given state each year ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# Here we use the cmr data that is encoded for the multistate model without
+# trap-dependence. 
+cmr_data <- readRDS("data/00b_cmr_data_multisite_multiage.RDS")
+cmr_data <- cmr_data %>%
+  rowwise() %>%
+  mutate(lc = max(which(c_across(starts_with("yr")) != 0))) %>%
+  ungroup()
 
+# decant
+y <- cmr_data %>%
+  select(starts_with("yr")) %>%
+  as.matrix()
+fc <- cmr_data$fc
+lc <- cmr_data$lc
+T <- ncol(y)
+N <- nrow(y)
 
+#' Strategy: make a states x years matrix, loop through individuals incrementing
+#' the appropriate entries. Add also two partially observed states for known age
+#' but unknown site
+
+# function to get the age class ("juv", "imm", "ad") of an individual each year
+get_ages <- function(
+    h, # capture history - a row of 'y'
+    f # integer - first capture in h
+  ) {
+  # checks
+  stopifnot(f == min(which(h!=0)))
+  stopifnot(!(h[f] %in% c(2,5,8)))
+  
+  # create age vector
+  T <- length(h)
+  age <- rep(NA, T)
+  age[f] <- case_when(
+    h[f] %in% c(1,4,7) ~ "juv",
+    h[f] %in% c(3,6,9) ~ "ad"
+  )
+  if (f < T) {
+    for (t in f:(T-1)) {
+      age[t+1] <- case_when(
+        age[t] == "juv" ~ "imm",
+        age[t] == "imm" ~ "ad",
+        age[t] == "ad" ~ "ad"
+      )
+    }
+  }
+  age
+}
+
+# inspect get_ages function
+# i <- sample(1:N, 1)
+# y[i,]
+# get_ages(y[i,], fc[i])
+
+# construct matrix of totals
+total <- matrix(0, nrow = 9+2, ncol = T)
+rownames(total) <- c(
+  "Robben, juv",
+  "Robben, imm",
+  "Robben, ad",
+  "Boulders, juv",
+  "Boulders, imm",
+  "Boulders, ad",
+  "Stony, juv",
+  "Stony, imm",
+  "Stony, ad",
+  "Unkown, imm",
+  "Unknown, ad"
+)
+colnames(total) <- 2013:2023
+
+for (i in 1:N) {
+  if (any(y[i,fc[i]:lc[i]] == 0)) {
+    age <- get_ages(y[i,],fc[i])
+  }
+  for (t in fc[i]:lc[i]) {
+    if (y[i,t] != 0) {
+      total[y[i,t], t] <- total[y[i,t], t] + 1
+    }
+    if (y[i,t] == 0) {
+      row_index <- case_when(
+        age[t] == "imm" ~ 10,
+        age[t] == "ad" ~ 11
+      )
+      total[row_index, t] <- total[row_index, t] + 1
+    }
+  }
+}
+total
+
+# check that the total number observed in known states is the same as a
+# direct count from y
+# all(rowSums(total)[1:9] == table(c(y))[str_c(1:9)])
+
+## Repeat separately for hand-reared and wild-raised birds
+hr <- cmr_data$hr
+y_hr <- y[hr==1,]
+y_wr <- y[hr==0,]
+fc_hr <- fc[hr==1]
+fc_wr <- fc[hr==0]
+lc_hr <- lc[hr==1]
+lc_wr <- lc[hr==0]
+
+get_totals <- function(y, fc, lc) {
+  N <- nrow(y)
+  T <- ncol(y)
+  total <- matrix(0, nrow = 9+2, ncol = T)
+  rownames(total) <- c(
+    "Robben, juv",
+    "Robben, imm",
+    "Robben, ad",
+    "Boulders, juv",
+    "Boulders, imm",
+    "Boulders, ad",
+    "Stony, juv",
+    "Stony, imm",
+    "Stony, ad",
+    "Unkown, imm",
+    "Unknown, ad"
+  )
+  colnames(total) <- 2013:2023
+  for (i in 1:N) {
+    if (any(y[i,fc[i]:lc[i]] == 0)) {
+      age <- get_ages(y[i,],fc[i])
+    }
+    for (t in fc[i]:lc[i]) {
+      if (y[i,t] != 0) {
+        total[y[i,t], t] <- total[y[i,t], t] + 1
+      }
+      if (y[i,t] == 0) {
+        row_index <- case_when(
+          age[t] == "imm" ~ 10,
+          age[t] == "ad" ~ 11
+        )
+        total[row_index, t] <- total[row_index, t] + 1
+      }
+    }
+  }
+  total
+}  
+
+(total_hr <- get_totals(y_hr, fc_hr, lc_hr))
+(total_wr <- get_totals(y_wr, fc_wr, lc_wr))
+
+total_hr_tib <- as_tibble(total_hr) %>%
+  add_column(
+    site = c(rep(c("Robben", "Boulders", "Stony"), each = 3),rep("Unknown", 2)),
+    age = c(rep(c("juv", "imm", "ad"), 3), c("imm", "ad")),
+    hr = 1
+  )
+total_wr_tib <- as_tibble(total_wr) %>%
+  add_column(
+    site = c(rep(c("Robben", "Boulders", "Stony"), each = 3),rep("Unknown", 2)),
+    age = c(rep(c("juv", "imm", "ad"), 3), c("imm", "ad")),
+    hr = 0
+  )
+
+# Plot the balance
+total_tib <- rbind(total_hr_tib, total_wr_tib)
+total_tib %>%
+  pivot_longer(-c("site","age","hr"), names_to = "year", values_to = "count") %>%
+  mutate(
+    signed_count = ifelse(hr==1, 1, -1)*count,
+    year = as.integer(year)
+  ) %>%
+  # View()
+  # filter(site != "Unknown") %>%
+  ggplot(aes(x = year, fill = as.factor(hr))) +
+  geom_col(aes(y = signed_count), position = "identity") +
+  theme_classic() +
+  scale_y_continuous(
+    breaks = seq(-500,500,length.out = 5), 
+    labels = abs(seq(-500,500,length.out = 5))
+  ) +
+  scale_x_continuous(
+    breaks = 2013:2023,
+    labels = str_c("'",13:23)
+  ) +
+  scale_fill_discrete(
+    labels = c("wild-raised", "hand-reared")
+  ) +
+  theme(
+    panel.grid.major = element_line(linewidth = 0.25),
+    legend.position = c(0.875, 0.2),
+    legend.title = element_blank()
+  ) +
+  labs(
+    y = "Number of birds known to be alive",
+    x = "Year"
+  ) +
+  facet_grid(age ~ site)
