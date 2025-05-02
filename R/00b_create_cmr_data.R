@@ -1,6 +1,7 @@
-#' Create mark-recapture data set from encounter data.
-#' The mark-recapture dataset created here is encoded for a multi-site, 
-#' multi-age model with trap-dependence in the adult state.
+#' Create mark-recapture data sets from encounter data.
+#' We create two mark-recapture datasets here, for
+#'  i. a multi-site, multi-age model (without trap-dependence)
+#'  ii. a multi-site, multi-age model with trap-dependence in the adult state.
 library(tidyverse)
 
 # load encounter data across the region west of Cape Agulhas
@@ -20,10 +21,7 @@ colonies <- c("Robben", "Boulders", "Stony")
 pids <- enc_wca %>%
   filter(
     type=="M",
-    loc %in% colonies | ( str_detect(loc,"Rehab") & rhb_rls %in% colonies ),
-  ) %>%
-  filter(
-    age!="J"     # remove one bird marked as 'J' (juvenile) 
+    loc %in% colonies | ( str_detect(loc,"Rehab") & (rhb_rls %in% colonies) ),
   ) %>%
   pull(primary_id) %>%
   unique()
@@ -35,6 +33,21 @@ enc <- enc_wca %>%
     primary_id %in% pids,
     site %in% colonies
   )
+
+# two birds are marked as juveniles, both are double-marked, the first time
+# as a blue/chick, the second time as a juvenile:
+# uncomment following for proof
+# pids_marked_as_juvs <- enc %>%
+#   filter( type == "M" & age == "J" ) %>%
+#   pull(primary_id)
+# enc %>% filter(
+#   primary_id %in% pids_marked_as_juvs,
+#   type == "M"
+# )
+
+# we remove the second marking encounter as juveniles
+enc <- enc %>% 
+  filter( !(type == "M" & age == "J") )
 
 # filter encounters between March and October (unless a marking encounter,
 # which we allow from any month)
@@ -93,7 +106,7 @@ age_at_marking <- enc %>%
   mutate(
     marking_age = case_when(
       age %in% c("C","B") ~ 1,
-      age == "J" ~ 2,  # there shouldn't be any birds marked as 'J' here
+      age == "J" ~ 2,  # there shouldn't be any birds marked as 'J' here, we removed them above
       age == "A" ~ 3
     )
   ) %>%
@@ -175,12 +188,16 @@ cmr_data <- bird_year_site %>%
   ungroup() %>% 
   arrange( mark_year, marking_age, marking_site, primary_id )
 
-# add first capture 
+# add first capture and last capture
 cmr_data <- cmr_data %>%
   rowwise() %>%
   mutate( 
     fc = min( which( c_across( starts_with("yr") )!=0 ) ),
     .after = marking_site
+  ) %>% 
+  mutate( 
+    lc = max( which( c_across( starts_with("yr") )!=0 ) ),
+    .after = fc
   ) %>%
   ungroup()
 
@@ -252,12 +269,16 @@ cmr_data <- bird_year_site %>%
   ungroup() %>% 
   arrange( mark_year, marking_age, marking_site, primary_id )
 
-# add first capture 
+# add first capture and last capture
 cmr_data <- cmr_data %>%
   rowwise() %>%
   mutate( 
     fc = min( which( c_across( starts_with("yr") )!=0 ) ),
     .after = marking_site
+  ) %>% 
+  mutate( 
+    lc = max( which( c_across( starts_with("yr") )!=0 ) ),
+    .after = fc
   ) %>%
   ungroup()
 

@@ -31,6 +31,7 @@ enc %>%
   ungroup() %>%
   group_by( n_sites ) %>% 
   summarise( n_birdyears = n() )
+# 219 / (219 + 14677) ~ 0.014, less than 2%
 
 # gather all the multi-site bird-years
 multisite_birdyears <- enc %>%
@@ -104,7 +105,7 @@ multisite_birdyears <- left_join(
 
 # now use the info on breeding sites and preferred sites to assign a single site
 # to each multi-site bird-year according to the hierarchy described above
-# (see code to test this by inspection below)
+# (see code to test this by inspection below, after saving)
 multisite_birdyears <- multisite_birdyears %>%
   group_by( primary_id, year ) %>%
   mutate(
