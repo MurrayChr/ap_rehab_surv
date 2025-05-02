@@ -1,4 +1,4 @@
-#' Simulate cmr data under the multi-age, multi-site model '01_multiage_multisite_trap-dep.stan'
+#' Simulate cmr data under the multi-age, multi-site model '02_td.stan'
 #' that incorporates trap-dependence (but not transience).
 #' The code is factored so that data can be simulated under the model either
 #'  (i) using parameter values from a posterior draw of the fit model and the 
@@ -9,7 +9,7 @@
 library(tidyverse)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# ---- Function to sim data under '01_multiage_multisite_trap-dep.stan' ----
+#         ---- Function to sim data under '02_td.stan' ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #' The function arguments are:

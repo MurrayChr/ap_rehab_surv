@@ -1,4 +1,4 @@
-#' Posterior predictive checks of model fit for '01_multiage_multisite_trap-dep.stan' 
+#' Posterior predictive checks of model fit for '02_td.stan' 
 #' to the data 'data/00b_cmr_data_multisite_multiage_trapdep.RDS'
 library(tidyverse)
 library(cmdstanr)
@@ -14,7 +14,7 @@ source("R/00_function_fit_mixtures.R")
 
 # load data and model fit to data
 real_cmr_data <- readRDS("data/00b_cmr_data_multisite_multiage_trapdep.RDS")
-fit <- readRDS("outputs/01a_multiage_multisite_trap-dep_fit.RDS")
+fit <- readRDS("outputs/02a_td_fit.RDS")
 
 # remove individuals first captured on last occasion
 T <- sum(str_starts(names(real_cmr_data), "yr"))
