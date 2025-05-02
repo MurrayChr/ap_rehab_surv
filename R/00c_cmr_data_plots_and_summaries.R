@@ -34,7 +34,7 @@ newly_marked %>%
   theme(
     panel.grid.major = element_line(colour = "grey95"),
     legend.position.inside = TRUE,
-    legend.position = c(0.33, 0.8)
+    legend.position = c(0.3, 0.8)
   ) +
   facet_grid(
     hr ~ marking_site, 
@@ -50,22 +50,21 @@ newly_marked %>%
 # ---- How many wild-raised birds marked as chicks were observed as adults? ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# extract relevant capture histories
-y <- cmr_data %>%
+cmr_data %>%
   filter(
     marking_age == 1,
     hr == 0
   ) %>%
-  select(starts_with("yr")) %>%
-  as.matrix()
-
-# first and last capture
-fc <- apply(y, 1, function(x) min(which(x!=0)))
-lc <- apply(y, 1, function(x) max(which(x!=0)))
-
-# first-captured as juveniles, so fc + 2 is youngest adult occasion
-sum(fc + 2 <= lc) # number detected as adults
-100*mean(fc + 2 <= lc)/length(fc) # as a proportion of total
+  mutate(
+    obs_as_ad = fc + 2 <= lc  # marked as chicks, so adult two years later
+  ) %>%
+  group_by(
+    obs_as_ad
+  ) %>%
+  summarise(
+    n = n()
+  )
+# so 413 / (413 + 1291) ~ 0.24, about a quarter of them
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #      ---- Numbers known to be alive and in a given state each year ----
@@ -73,11 +72,8 @@ sum(fc + 2 <= lc) # number detected as adults
 
 # Here we use the cmr data that is encoded for the multistate model without
 # trap-dependence. 
+rm(list = ls())
 cmr_data <- readRDS("data/00b_cmr_data_multisite_multiage.RDS")
-cmr_data <- cmr_data %>%
-  rowwise() %>%
-  mutate(lc = max(which(c_across(starts_with("yr")) != 0))) %>%
-  ungroup()
 
 # decant
 y <- cmr_data %>%
@@ -140,7 +136,7 @@ rownames(total) <- c(
   "Unkown, imm",
   "Unknown, ad"
 )
-colnames(total) <- 2013:2023
+colnames(total) <- 2013:2024
 
 for (i in 1:N) {
   if (any(y[i,fc[i]:lc[i]] == 0)) {
@@ -162,7 +158,7 @@ for (i in 1:N) {
 total
 
 # check that the total number observed in known states is the same as a
-# direct count from y
+# direct count from y; uncommenting and running the following should give TRUE
 # all(rowSums(total)[1:9] == table(c(y))[str_c(1:9)])
 
 ## Repeat separately for hand-reared and wild-raised birds
@@ -191,7 +187,7 @@ get_totals <- function(y, fc, lc) {
     "Unkown, imm",
     "Unknown, ad"
   )
-  colnames(total) <- 2013:2023
+  colnames(total) <- 2013:2024
   for (i in 1:N) {
     if (any(y[i,fc[i]:lc[i]] == 0)) {
       age <- get_ages(y[i,],fc[i])
@@ -236,8 +232,6 @@ total_tib %>%
     signed_count = ifelse(hr==1, 1, -1)*count,
     year = as.integer(year)
   ) %>%
-  # View()
-  # filter(site != "Unknown") %>%
   ggplot(aes(x = year, fill = as.factor(hr))) +
   geom_col(aes(y = signed_count), position = "identity") +
   theme_classic() +
@@ -246,8 +240,8 @@ total_tib %>%
     labels = abs(seq(-500,500,length.out = 5))
   ) +
   scale_x_continuous(
-    breaks = 2013:2023,
-    labels = str_c("'",13:23)
+    breaks = 2013:2024,
+    labels = str_c("'",13:24)
   ) +
   scale_fill_discrete(
     breaks = c("1", "0"),
