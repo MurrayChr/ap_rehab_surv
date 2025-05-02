@@ -30,7 +30,7 @@ marr <- get_marray(y, nStates=9)
 #                      ---- Fit the model ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# compile and fit model (~ 4 minutes)
+# compile and fit model (~ 5 minutes)
 file <- "stan/01_multiage_multisite.stan"
 mod <- cmdstan_model(file)
 stan_data <- list(T=T, marr=marr)
@@ -61,7 +61,7 @@ fit$summary("phi_ad") %>%
       site_index == 2 ~ 0,
       site_index == 3 ~ 1
     )
-  ) %>%
+  ) %>% 
   ggplot( aes(x=year+xshift, colour=site) ) +
   geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
   scale_x_continuous( breaks=2013:2023 ) +
@@ -89,7 +89,6 @@ fit$summary("phi_jv") %>%
       site_index == 3 ~ 1
     )
   ) %>%
-  filter(year<=2021) %>%
   ggplot( aes(x=year+xshift, colour=site) ) +
   geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
   scale_x_continuous( breaks=2013:2023 ) +
