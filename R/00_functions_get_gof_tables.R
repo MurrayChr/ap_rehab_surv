@@ -283,8 +283,8 @@ get_WBWA_table <- function(cmr_data, occasion, state, nStates) {
       
       # add many missing (state-release, state_next_reenc) cases
       zero_tib <- tibble(
-        state_release = rep(1:12, each = 12),
-        state_next_reenc = rep(1:12, 12),
+        state_release = rep(1:nStates, each = nStates),
+        state_next_reenc = rep(1:nStates, nStates),
         n = 0
       )
       
