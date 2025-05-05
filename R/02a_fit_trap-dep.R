@@ -23,7 +23,7 @@ for (i in 1:nrow(y)) {
   y[i,fc[i]:T][y[i, fc[i]:T]==0] <- 13 
 }
 
-# m-array for model '01_multiage_multisite_trap-dep.stan' which has 12 states
+# m-array for model '02_td.stan' which has 12 states
 # states 4,8,12 are unobservable so the warning about their absence can be safely ignored
 marr <- get_marray(y, nStates=12) 
 
