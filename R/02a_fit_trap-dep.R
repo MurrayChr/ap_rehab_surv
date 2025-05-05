@@ -2,6 +2,7 @@
 # transience (and without a hand-reading covariate).
 library(tidyverse)
 library(cmdstanr)
+library(cowplot)
 source("R/00_function_get_marray.R")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -47,7 +48,7 @@ fit$diagnostic_summary()
 fit <- readRDS("outputs/02a_td_fit.RDS")
 
 # plot adult survival estimates
-fit$summary("phi_ad") %>%
+plt_phi_ad <-fit$summary("phi_ad") %>%
   mutate(
     site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
     t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
@@ -69,12 +70,15 @@ fit$summary("phi_ad") %>%
   coord_cartesian( ylim=c(0,1) ) +
   theme_classic() +
   theme(
-    panel.grid.major = element_line()
+    panel.grid.major = element_line(),
+    legend.position.inside = TRUE,
+    legend.position = c(0.75,0.25)
   ) + 
   labs( x= "year", y="estimate", title = "Adult survival")
+plt_phi_ad
 
 # plot juvenile survival estimates
-fit$summary("phi_jv") %>%
+plt_phi_jv <- fit$summary("phi_jv") %>%
   mutate(
     site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
     t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
@@ -90,19 +94,21 @@ fit$summary("phi_jv") %>%
       site_index == 3 ~ 1
     )
   ) %>%
-  filter(year<=2021) %>%
   ggplot( aes(x=year+xshift, colour=site) ) +
   geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
   scale_x_continuous( breaks=2013:2023 ) +
   coord_cartesian( ylim=c(0,1) ) +
   theme_classic() +
   theme(
-    panel.grid.major = element_line()
+    panel.grid.major = element_line(),
+    legend.position.inside = TRUE,
+    legend.position = c(0.225,0.8)
   ) + 
   labs( x= "year", y="estimate", title = "Juvenile survival")
+plt_phi_jv
 
 # plot the detection parameters for 'trap-aware' adults
-fit$summary("p_ad_A") %>%
+plt_p_ad_A <- fit$summary("p_ad_A") %>%
   mutate(
     site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
     t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
@@ -120,16 +126,19 @@ fit$summary("p_ad_A") %>%
   ) %>%
   ggplot( aes(x=year+xshift, colour=site) ) +
   geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2023 ) +
+  scale_x_continuous( breaks=2013:2024 ) +
   coord_cartesian( ylim=c(0,1) ) +
   theme_classic() +
   theme(
-    panel.grid.major = element_line()
+    panel.grid.major = element_line(),
+    legend.position.inside = TRUE,
+    legend.position = c(0.775,0.25)
   ) + 
   labs( x= "year", y="estimate", title = "Detection of trap-aware adults")
+plt_p_ad_A
 
 # plot the detection parameters for 'trap-unaware' adults
-fit$summary("p_ad_U") %>%
+plt_p_ad_U <- fit$summary("p_ad_U") %>%
   mutate(
     site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
     t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
@@ -147,16 +156,18 @@ fit$summary("p_ad_U") %>%
   ) %>%
   ggplot( aes(x=year+xshift, colour=site) ) +
   geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2023 ) +
+  scale_x_continuous( breaks=2013:2024 ) +
   coord_cartesian( ylim=c(0,1) ) +
   theme_classic() +
   theme(
-    panel.grid.major = element_line()
+    panel.grid.major = element_line(),
+    legend.position = "none"
   ) + 
   labs( x= "year", y="estimate", title = "Detection of trap-unaware adults")
+plt_p_ad_U
 
 # plot the detection parameters for 'newly matured' adults 
-fit$summary("p_ad_N") %>%
+plt_p_ad_N <- fit$summary("p_ad_N") %>%
   mutate(
     site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
     t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
@@ -174,16 +185,18 @@ fit$summary("p_ad_N") %>%
   ) %>%
   ggplot( aes(x=year+xshift, colour=site) ) +
   geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2023 ) +
+  scale_x_continuous( breaks=2013:2024 ) +
   coord_cartesian( ylim=c(0,1) ) +
   theme_classic() +
   theme(
-    panel.grid.major = element_line()
+    panel.grid.major = element_line(),
+    legend.position = "none"
   ) + 
   labs( x= "year", y="estimate", title = "Detection of newly-matured adults")
+plt_p_ad_N
 
 # immature detection
-fit$summary("p_im") %>%
+plt_p_im <- fit$summary("p_im") %>%
   mutate(
     site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
     t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
@@ -201,16 +214,19 @@ fit$summary("p_im") %>%
   ) %>%
   ggplot( aes(x=year+xshift, colour=site) ) +
   geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2023 ) +
+  scale_x_continuous( breaks=2013:2024 ) +
   coord_cartesian( ylim=c(0,1) ) +
   theme_classic() +
   theme(
-    panel.grid.major = element_line()
+    panel.grid.major = element_line(),
+    legend.position.inside = TRUE,
+    legend.position = c(0.375,0.7)
   ) + 
   labs( x= "year", y="estimate", title = "Detection of immatures")
+plt_p_im
 
 # movement parameters
-fit$draws(format = "df") %>%
+plt_mv <- fit$draws(format = "df") %>%
   select( starts_with("m_") ) %>%
   pivot_longer( everything(), names_to = "variable", values_to = "draw" ) %>%
   mutate(
@@ -249,5 +265,13 @@ fit$draws(format = "df") %>%
     x = "Probability",
     fill = "Age class"
   )
+plt_mv
 
+# arrange plots in grid and save
+plt_estimates <- plot_grid(
+  plt_phi_ad, plt_phi_jv, plt_p_ad_A, plt_p_im, plt_p_ad_U, plt_p_ad_N,
+  plt_mv,
+  ncol = 2
+)
+# ggsave(plot = plt_estimates, "figs/02a_estimates.pdf", height = 13.3, width = 10)
 

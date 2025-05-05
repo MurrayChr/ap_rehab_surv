@@ -125,7 +125,7 @@ plt_p_ad <- fit$summary("p_ad") %>%
   ) %>%
   ggplot( aes(x=year+xshift, colour=site) ) +
   geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2023 ) +
+  scale_x_continuous( breaks=2013:2024 ) +
   coord_cartesian( ylim=c(0,1) ) +
   theme_classic() +
   theme(
@@ -135,7 +135,6 @@ plt_p_ad <- fit$summary("p_ad") %>%
   ) + 
   labs( x= "year", y="estimate", title = "Detection of adults")
 plt_p_ad
-
 
 # immature detection
 plt_p_im <- fit$summary("p_im") %>%
@@ -156,7 +155,7 @@ plt_p_im <- fit$summary("p_im") %>%
   ) %>%
   ggplot( aes(x=year+xshift, colour=site) ) +
   geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2023 ) +
+  scale_x_continuous( breaks=2013:2024 ) +
   coord_cartesian( ylim=c(0,1) ) +
   theme_classic() +
   theme(
@@ -214,6 +213,6 @@ plt_mv
 # arrange plots in grid and save
 plt_estimates <- plot_grid(
   plt_phi_ad, plt_phi_jv, plt_p_ad, plt_p_im, plt_mv,
-  ncol = 2
+  ncol = 2,
 )
 # ggsave(plot = plt_estimates, "figs/01a_estimates.pdf", height = 10, width = 10)
