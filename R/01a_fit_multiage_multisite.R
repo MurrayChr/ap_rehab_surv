@@ -2,6 +2,7 @@
 # (without trap-dependence, transience or a hand-reading covariate).
 library(tidyverse)
 library(cmdstanr)
+library(cowplot)
 source("R/00_function_get_marray.R")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -46,7 +47,7 @@ fit$diagnostic_summary()
 fit <- readRDS("outputs/01a_multiage_multisite_fit.RDS")
 
 # plot adult survival estimates
-fit$summary("phi_ad") %>%
+plt_phi_ad <- fit$summary("phi_ad") %>%
   mutate(
     site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
     t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
@@ -68,12 +69,15 @@ fit$summary("phi_ad") %>%
   coord_cartesian( ylim=c(0,1) ) +
   theme_classic() +
   theme(
-    panel.grid.major = element_line()
+    panel.grid.major = element_line(),
+    legend.position.inside = TRUE,
+    legend.position = c(0.75,0.25)
   ) + 
   labs( x= "year", y="estimate", title = "Adult survival")
+plt_phi_ad
 
 # plot juvenile survival estimates
-fit$summary("phi_jv") %>%
+plt_phi_jv <- fit$summary("phi_jv") %>%
   mutate(
     site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
     t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
@@ -95,12 +99,15 @@ fit$summary("phi_jv") %>%
   coord_cartesian( ylim=c(0,1) ) +
   theme_classic() +
   theme(
-    panel.grid.major = element_line()
+    panel.grid.major = element_line(),
+    legend.position.inside = TRUE,
+    legend.position = c(0.225,0.8)
   ) + 
   labs( x= "year", y="estimate", title = "Juvenile survival")
+plt_phi_jv
 
 # plot the detection parameters for adults
-fit$summary("p_ad") %>%
+plt_p_ad <- fit$summary("p_ad") %>%
   mutate(
     site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
     t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
@@ -122,12 +129,16 @@ fit$summary("p_ad") %>%
   coord_cartesian( ylim=c(0,1) ) +
   theme_classic() +
   theme(
-    panel.grid.major = element_line()
+    panel.grid.major = element_line(),
+    legend.position.inside = TRUE,
+    legend.position = c(0.775,0.25)
   ) + 
   labs( x= "year", y="estimate", title = "Detection of adults")
+plt_p_ad
+
 
 # immature detection
-fit$summary("p_im") %>%
+plt_p_im <- fit$summary("p_im") %>%
   mutate(
     site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
     t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
@@ -149,12 +160,15 @@ fit$summary("p_im") %>%
   coord_cartesian( ylim=c(0,1) ) +
   theme_classic() +
   theme(
-    panel.grid.major = element_line()
+    panel.grid.major = element_line(),
+    legend.position.inside = TRUE,
+    legend.position = c(0.375,0.7)
   ) + 
   labs( x= "year", y="estimate", title = "Detection of immatures")
+plt_p_im
 
 # movement parameters
-fit$draws(format = "df") %>%
+plt_mv <- fit$draws(format = "df") %>%
   select( starts_with("m_") ) %>%
   pivot_longer( everything(), names_to = "variable", values_to = "draw" ) %>%
   mutate(
@@ -179,7 +193,9 @@ fit$draws(format = "df") %>%
     panel.grid.major = element_line(),
     axis.title = element_blank(),
     axis.text.y = element_blank(),
-    axis.ticks.y = element_blank() 
+    axis.ticks.y = element_blank()
+    # legend.position.inside = TRUE,
+    # legend.position = c(0.9,0.85)
   ) +
   scale_fill_manual(
     values=c("m_ad"="red", "m_jv"="blue"),
@@ -193,5 +209,11 @@ fit$draws(format = "df") %>%
     x = "Probability",
     fill = "Age class"
   )
+plt_mv
 
-
+# arrange plots in grid and save
+plt_estimates <- plot_grid(
+  plt_phi_ad, plt_phi_jv, plt_p_ad, plt_p_im, plt_mv,
+  ncol = 2
+)
+# ggsave(plot = plt_estimates, "figs/01a_estimates.pdf", height = 10, width = 10)
