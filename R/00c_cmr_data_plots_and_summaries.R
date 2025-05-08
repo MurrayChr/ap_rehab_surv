@@ -259,3 +259,30 @@ total_tib %>%
   ) +
   facet_grid(age ~ site)
 # ggsave("figs/00c_numbers_known_to_be_alive.png", scale = 1.8)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#                        ---- Observed lifespans ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Here we use the cmr data that is encoded for the multistate model without
+# trap-dependence. 
+rm(list = ls())
+cmr_data <- readRDS("data/00b_cmr_data_multisite_multiage.RDS")
+
+# what is the distribution of observed lifespans?
+# we assume that birds marked as adults were >= 2 years when marked
+cmr_data <- cmr_data %>%
+  mutate(
+    obs_ls = case_when(
+      marking_age == 1 ~ lc - fc,
+      marking_age == 3 ~ lc - fc + 2,
+    ),
+    .after = "lc"
+  ) 
+obs_lifespan <- cmr_data$obs_ls
+
+# all individuals
+barplot(table(obs_lifespan))
+
+# individuals observed survive to 'adult' (age >= 2)
+barplot(table(obs_lifespan[obs_lifespan >= 2]))
