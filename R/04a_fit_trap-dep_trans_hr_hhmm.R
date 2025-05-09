@@ -61,6 +61,11 @@ fit <- mod$sample(stan_data, parallel_chains = 4)
 # diagnostic summary
 fit$diagnostic_summary()
 
+# rhats and ess's
+fit_summary <- fit$summary()
+max(fit_summary$rhat)
+min(fit_summary$ess_bulk)
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                   ---- Compare posteriors ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
