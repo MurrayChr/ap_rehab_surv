@@ -83,23 +83,27 @@ for (i in 1:3) {
 #                      ---- Fit the model ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# compile and fit (~ 24 mins)
+# compile and fit (~ 1 hour)
 file <- "stan/06_td_tr-bss_hr_phi-im.stan"
 mod <- cmdstan_model(file)
 stan_data <- list(T=T, marr_wr=marr_wr, marr_hr = marr_hr, N_1=N_1, N_0=N_0)
-fit <- mod$sample(stan_data, parallel_chains = 4)
+fit <- mod$sample(stan_data, parallel_chains = 4, 
+  adapt_delta = 0.99  # increased from default to remove divergent transitions
+)
 # fit$save_object("outputs/06a_td_tr-bss_hr_phi-im_fit.RDS")
 
 # diagnostic summary
 fit$diagnostic_summary()
 
-# the diagnostic summary is ok, but some parameters have sampled very poorly
-fit$summary() %>% 
-  filter(rhat > 1.01 | ess_bulk < 100) %>%
-  View()
+# rhats and ess's
+fit_summary <- fit$summary()
+max(fit_summary$rhat)
+min(fit_summary$ess_bulk)
 
-#' Many of the problematic parameters are the residency probabilities when 
-#' pi_r ought to be 1 (especially the ones with 'long tails' much below 1).
+# there are only two residency probabilities with rhat just over 1.01
+filter(fit_summary, rhat > 1.01)
+
+#' So we'll go ahead and use the posterior sample...
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #               ---- Plot estimates ----

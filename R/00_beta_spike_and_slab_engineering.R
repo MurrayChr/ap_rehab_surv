@@ -4,7 +4,7 @@
 library(tidyverse)
 
 # Compare histograms and analytically derived density
-alpha_for_spike <- 999
+alpha_for_spike <- 99
 beta_for_spike <- 1
 alpha_for_slab <- 2
 beta_for_slab <- 1

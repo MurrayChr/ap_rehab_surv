@@ -113,7 +113,7 @@ functions {
       // hard-coding the beta distributions' parameters 
       int w_spike = 25;
       int w_slab = 5;
-      int alpha_spike = 999;
+      int alpha_spike = 99;
       int beta_spike = 1;
       int alpha_slab = 2;
       int beta_slab = 1;
