@@ -143,8 +143,8 @@ sim_cmr_data <- function(pars, data_str) {
   
   # simulate states
   for (i in 1:nrow(z)) {
-    # sample if resident or not
-    if (fc_code[i] %in% c(3, 7, 11)) {
+    if (fc_code[i] %in% c(3, 7, 11)) {  # individuals marked as adults
+      # sample if resident or not
       site_ind <- as.integer((fc_code[i] - 3)/4 + 1) # maps 3,7,11 to 1,2,3
       res <- runif(1) < pi_r[site_ind, fc[i]]        # true with prob pi_r[...]
       # if transient then 'dies'
@@ -157,7 +157,7 @@ sim_cmr_data <- function(pars, data_str) {
           z[i, t+1] <- sample(1:13, 1, prob=trans[[t]][z[i,t], ])
         }
       }
-    } else {
+    } else {  # individuals not marked as adults (i.e. marked as juveniles)
       for (t in fc[i]:(T-1)) {
         z[i, t+1] <- sample(1:13, 1, prob=trans[[t]][z[i,t], ])
       }
