@@ -1,8 +1,8 @@
-#' Posterior predictive checks of model fit for '02_multiage_multisite_trap-dep_trans.stan' 
+#' Posterior predictive checks of model fit for '03_td_tr.stan.stan' 
 #' to the data 'data/00b_cmr_data_multisite_multiage_trapdep.RDS'
 library(tidyverse)
 library(cmdstanr)
-source("R/02b_fn_sim_rep_data_multiage_multisite_trap-dep_trans.R")
+source("R/03b_fn_sim_rep_data_trap-dep_trans.R")
 source("R/00_functions_get_gof_tables.R")
 source("R/00_function_get_expected_frequencies.R")
 source("R/00_function_get_ft.R")
@@ -14,7 +14,7 @@ source("R/00_function_fit_mixtures.R")
 
 # load data and model fit to data
 real_cmr_data <- readRDS("data/00b_cmr_data_multisite_multiage_trapdep.RDS")
-fit <- readRDS("outputs/02a_multiage_multisite_trap-dep_trans_fit.RDS")
+fit <- readRDS("outputs/03a_td_tr_fit.RDS")
 
 # remove individuals first captured on last occasion
 T <- sum(str_starts(names(real_cmr_data), "yr"))
@@ -29,7 +29,8 @@ data_str <- list(
 )
 
 # simulate replicate data
-n_reps <- 100
+# n_reps <- 100
+n_reps <- 30
 draws <- sample(1:4000, n_reps, replace = FALSE)
 rep_data_list <- list()
 for (i in 1:n_reps) {
@@ -115,7 +116,7 @@ test_3G.SR_plot <- test_3G.SR_replicates %>%
     x = "Freeman-Tukey discrepancy measure"
   )
 test_3G.SR_plot
-# ggsave("figs/02c_ppc_test_3G.SR.png", test_3G.SR_plot, scale = 1.5)
+# ggsave("figs/03c_ppc_test_3G.SR.png", test_3G.SR_plot, scale = 1.5)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                 ---- Test WBWA for memory ----
@@ -195,7 +196,7 @@ test_WBWA_plot <- test_WBWA_replicates %>%
     x = "Freeman-Tukey discrepancy measure"
   )
 test_WBWA_plot
-# ggsave("figs/02c_ppc_test_WBWA.png", test_WBWA_plot, scale = 1.5)
+# ggsave("figs/03c_ppc_test_WBWA.png", test_WBWA_plot, scale = 1.5)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #         ---- Test M.ITEC for immediate trap-dependence ----
@@ -320,4 +321,4 @@ test_M.ITEC_plot <- test_M.ITEC_replicates %>%
     x = "Freeman-Tukey discrepancy measure"
   )
 test_M.ITEC_plot
-# ggsave("figs/02c_ppc_test_M.ITEC.png", test_M.ITEC_plot, scale = 1.5)
+# ggsave("figs/03c_ppc_test_M.ITEC.png", test_M.ITEC_plot, scale = 1.5)

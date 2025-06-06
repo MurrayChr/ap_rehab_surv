@@ -2,7 +2,7 @@
 #' to the data 'data/00b_cmr_data_multisite_multiage_trapdep.RDS'
 library(tidyverse)
 library(cmdstanr)
-source("R/01b_fn_sim_rep_data_multiage_multisite_trap-dep.R")
+source("R/02b_fn_sim_rep_data_trap-dep.R")
 source("R/00_functions_get_gof_tables.R")
 source("R/00_function_get_expected_frequencies.R")
 source("R/00_function_get_ft.R")
@@ -115,7 +115,7 @@ test_3G.SR_plot <- test_3G.SR_replicates %>%
     x = "Freeman-Tukey discrepancy measure"
   )
 test_3G.SR_plot
-# ggsave("figs/01c_ppc_test_3G.SR.png", test_3G.SR_plot, scale = 1.5)
+# ggsave("figs/02c_ppc_test_3G.SR.png", test_3G.SR_plot, scale = 1.5)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                 ---- Test WBWA for memory ----
@@ -195,7 +195,7 @@ test_WBWA_plot <- test_WBWA_replicates %>%
     x = "Freeman-Tukey discrepancy measure"
   )
 test_WBWA_plot
-# ggsave("figs/01c_ppc_test_WBWA.png", test_WBWA_plot, scale = 1.5)
+# ggsave("figs/02c_ppc_test_WBWA.png", test_WBWA_plot, scale = 1.5)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #         ---- Test M.ITEC for immediate trap-dependence ----
@@ -320,4 +320,4 @@ test_M.ITEC_plot <- test_M.ITEC_replicates %>%
     x = "Freeman-Tukey discrepancy measure"
   )
 test_M.ITEC_plot
-# ggsave("figs/01c_ppc_test_M.ITEC.png", test_M.ITEC_plot, scale = 1.5)
+# ggsave("figs/02c_ppc_test_M.ITEC.png", test_M.ITEC_plot, scale = 1.5)

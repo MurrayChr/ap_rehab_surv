@@ -133,9 +133,10 @@ sim_cmr_data <- function(pars, data_str) {
   
   # initialise z matrix of states
   z <- matrix(0, nrow = N, ncol = T)
-  for (t in 1:(T-1)) {
-    z[fc==t, t] <- fc_code[fc==t]
+  for (i in 1:N) {
+    z[i, fc[i]] <- fc_code[i]
   }
+
   
   # simulate states
   for (i in 1:nrow(z)) {
@@ -147,7 +148,8 @@ sim_cmr_data <- function(pars, data_str) {
   # initialise y matrix of observations
   y <- matrix(0, nrow = N, ncol = T)
   for (i in 1:nrow(y)) {
-    for (t in fc[i]:T) {
+    y[i, fc[i]] <- z[i, fc[i]]   
+    for (t in (fc[i]+1):T) {
       y[i,t] <- sample(1:13, 1, prob=obs[[t]][z[i,t], ])
     }
   }

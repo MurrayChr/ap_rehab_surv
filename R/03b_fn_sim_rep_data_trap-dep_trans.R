@@ -1,6 +1,5 @@
-#' Simulate cmr data under the multi-age, multi-site model 
-#' '02_multiage_multisite_trap-dep_trans.stan' that incorporates trap-dependence
-#' and transience.
+#' Simulate cmr data under the multi-age, multi-site model '03_td_tr.stan.stan' 
+#' that incorporates trap-dependence and transience.
 #' The code is factored so that data can be simulated under the model either
 #'  (i) using parameter values from a posterior draw of the fit model and the 
 #'  structure of the dataset to which it was fit (for posterior predictive checks),
@@ -138,8 +137,8 @@ sim_cmr_data <- function(pars, data_str) {
   
   # initialise z matrix of states
   z <- matrix(0, nrow = N, ncol = T)
-  for (t in 1:(T-1)) {
-    z[fc==t, t] <- fc_code[fc==t]
+  for (i in 1:N) {
+    z[i, fc[i]] <- fc_code[i]
   }
   
   # simulate states
@@ -147,7 +146,7 @@ sim_cmr_data <- function(pars, data_str) {
     # sample if resident or not
     if (fc_code[i] %in% c(3, 7, 11)) {
       site_ind <- as.integer((fc_code[i] - 3)/4 + 1) # maps 3,7,11 to 1,2,3
-      res <- runif(1) < pi_r[site_ind, fc[i]]
+      res <- runif(1) < pi_r[site_ind, fc[i]]        # true with prob pi_r[...]
       # if transient then 'dies'
       if (!res) {
         z[i, (fc[i]+1):T] <- 13
@@ -168,7 +167,8 @@ sim_cmr_data <- function(pars, data_str) {
   # initialise y matrix of observations
   y <- matrix(0, nrow = N, ncol = T)
   for (i in 1:nrow(y)) {
-    for (t in fc[i]:T) {
+    y[i, fc[i]] <- z[i, fc[i]]   
+    for (t in (fc[i]+1):T) {
       y[i,t] <- sample(1:13, 1, prob=obs[[t]][z[i,t], ])
     }
   }
