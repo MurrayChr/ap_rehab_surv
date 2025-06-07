@@ -29,8 +29,7 @@ data_str <- list(
 )
 
 # simulate replicate data
-# n_reps <- 100
-n_reps <- 30
+n_reps <- 100
 draws <- sample(1:4000, n_reps, replace = FALSE)
 rep_data_list <- list()
 for (i in 1:n_reps) {
