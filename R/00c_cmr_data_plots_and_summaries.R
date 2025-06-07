@@ -286,3 +286,46 @@ barplot(table(obs_lifespan))
 
 # individuals observed survive to 'adult' (age >= 2)
 barplot(table(obs_lifespan[obs_lifespan >= 2]))
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#                  ---- Observations of immatures ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#' What proportion of individuals marked as juveniles and known to survive to
+#' adulthood were resighted as immatures?
+rm(list = ls())
+
+# again, use the data encoded for the multistate model without trap-dependence
+cmr_data <- readRDS("data/00b_cmr_data_multisite_multiage.RDS")
+
+# add observed lifespan
+# we assume that birds marked as adults were >= 2 years when marked
+cmr_data <- cmr_data %>%
+  mutate(
+    obs_ls = case_when(
+      marking_age == 1 ~ lc - fc,
+      marking_age == 3 ~ lc - fc + 2,
+    ),
+    .after = "lc"
+  ) 
+
+# filter for birds marked as juveniles and known to survive to adulthood,
+# then query if they were seen the year after marking
+target_cmr_data <- cmr_data %>%
+  filter(
+    marking_age == 1,
+    obs_ls >= 2
+  ) %>%
+  rowwise() %>%
+  mutate(
+    fc_plus_one_code = c_across(starts_with("yr"))[fc + 1], # zero if not recaptured as immature, else non-zero
+    .after=fc_code
+  ) %>%
+  ungroup() 
+
+# number of birds marked as juveniles and known to survive to adulthood
+nrow(target_cmr_data)
+
+# proportion seen as immatures
+mean(target_cmr_data$fc_plus_one_code != 0)
+
