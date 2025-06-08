@@ -127,8 +127,7 @@ data_str <- list(
 )
 
 # simulate replicate data and save to outputs/sim_04/rep_data
-# n_reps <- 100
-n_reps <- 3
+n_reps <- 100
 for (i in 1:n_reps) {
   truth <- generate_parameter_values(fit, real_cmr_data)
   rep_data <- sim_cmr_data(pars = truth, data_str = data_str)
@@ -249,7 +248,7 @@ for (i in 1:n_reps) {
 
 plot_par_vs_truth <- function(rep_cmr_data, fit, par) {
   par_truth <- rep_cmr_data$truth[[par]] 
-  years <- (2013:2023)[1:ncol(par_truth)]
+  years <- 2012 + 1:ncol(par_truth)
   colnames(par_truth) <- years
   par_truth <- as_tibble(par_truth) %>%
     add_column(site = 1:3) %>%
@@ -287,7 +286,7 @@ plot_par_vs_truth(rep_cmr_data, fit, "p_ad_U")
 plot_par_vs_truth(rep_cmr_data, fit, "p_ad_N")
 
 fit$summary(c("hr_jv", "hr_ad"))
-truth[c("hr_jv", "hr_ad")]
+rep_cmr_data$truth[c("hr_jv", "hr_ad")]
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #            ---- Estimates vs truth across replicates ----
