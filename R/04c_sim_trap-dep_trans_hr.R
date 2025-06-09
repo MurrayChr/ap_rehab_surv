@@ -414,11 +414,11 @@ hr_plot <- hr_est %>%
   geom_linerange(aes(ymin = q5, ymax = q95), alpha = 0.2 ) +
   scale_x_continuous(breaks = seq(-1,1, length.out = 5)) +
   scale_y_continuous(breaks = seq(-1,1, length.out = 5)) +
-  coord_fixed() +
+  coord_fixed(xlim=c(-1.5,1.5), ylim = c(-1.5,1.5)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", alpha = 0.5) +
   theme_classic() +
   theme(
-    panel.grid.major = element_line(linewidth = 0.3)
+    panel.grid.major = element_line(linewidth = 0.15)
   ) +
   facet_wrap(vars(variable), labeller = as_labeller(facet_labs)) +
   labs(x = "Truth", y = "Estimate", 
