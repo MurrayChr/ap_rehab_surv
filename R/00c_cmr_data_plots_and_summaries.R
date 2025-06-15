@@ -214,17 +214,18 @@ get_totals <- function(y, fc, lc) {
 total_hr_tib <- as_tibble(total_hr) %>%
   add_column(
     site = c(rep(c("Robben", "Boulders", "Stony"), each = 3),rep("Unknown", 2)),
-    age = c(rep(c("juv", "imm", "ad"), 3), c("imm", "ad")),
+    age = c(rep(c("Juvenile", "Immature", "Adult"), 3), c("Immature", "Adult")),
     hr = 1
   )
 total_wr_tib <- as_tibble(total_wr) %>%
   add_column(
     site = c(rep(c("Robben", "Boulders", "Stony"), each = 3),rep("Unknown", 2)),
-    age = c(rep(c("juv", "imm", "ad"), 3), c("imm", "ad")),
+    age = c(rep(c("Juvenile", "Immature", "Adult"), 3), c("Immature", "Adult")),
     hr = 0
   )
 
 # Plot the balance
+balance_plt_colours <- viridisLite::mako(2, begin = 0.3, end = 0.7)
 total_tib <- rbind(total_hr_tib, total_wr_tib)
 total_tib %>%
   pivot_longer(-c("site","age","hr"), names_to = "year", values_to = "count") %>%
@@ -235,23 +236,34 @@ total_tib %>%
   ggplot(aes(x = year, fill = as.factor(hr))) +
   geom_col(aes(y = signed_count), position = "identity") +
   theme_classic() +
+  coord_cartesian(ylim = c(-500, 500)) +
   scale_y_continuous(
     breaks = seq(-500,500,length.out = 5), 
     labels = abs(seq(-500,500,length.out = 5))
   ) +
   scale_x_continuous(
-    breaks = 2013:2024,
-    labels = str_c("'",13:24)
+    # breaks = 2013:2024,
+    # labels = str_c("'", 13:24),
+    breaks = seq(2013, 2024, by = 2),
+    labels = str_c("'", seq(13, 24, by = 2))
   ) +
-  scale_fill_discrete(
+  scale_fill_manual(
+  # scale_fill_discrete(
     breaks = c("1", "0"),
-    labels = c("1" = "hand-reared", "0" = "wild-raised")
+    labels = c("1" = "hand-reared", "0" = "wild-raised"),
+    # values = c("navyblue", "skyblue")
+    values = balance_plt_colours
   ) +
+  # scale_fill_viridis_d(name = "magma") +
   theme(
     panel.grid.major = element_line(linewidth = 0.25),
     legend.position.inside = TRUE,
     legend.position = c(0.875, 0.2),
-    legend.title = element_blank()
+    legend.title = element_blank(),
+    legend.text = element_text(size = 11),
+    strip.text = element_text(size = 11),
+    axis.title = element_text(size = 12),
+    aspect.ratio = 0.7
   ) +
   labs(
     y = "Number of birds known to be alive",
