@@ -332,6 +332,14 @@ for (i in 1:n_reps) {
 
 # plot
 plt <- est %>%
+  mutate(
+    year = t + 2012,
+    site_name = case_when(
+      site == 1 ~ "Robben",
+      site == 2 ~ "Boulders",
+      site == 3 ~ "Stony"
+    )
+  ) %>%
   ggplot(aes(x = truth)) +
   geom_point(aes(y = median), size = 0.5) +
   geom_linerange(aes(ymin = q5, ymax = q95), alpha = 0.2 ) +
@@ -343,7 +351,12 @@ plt <- est %>%
   theme(
     panel.grid.major = element_line(linewidth = 0.3)
   ) +
-  facet_grid(rows = vars(site), cols = vars(t)) +
+  facet_grid(
+    # rows = vars(site), 
+    # cols = vars(t)
+    rows = vars(site_name),
+    cols = vars(year)
+  ) +
   labs(
     x = "Truth",
     y = "Estimate",
@@ -354,6 +367,7 @@ plt <- est %>%
     )
   )
 plt
+ggsave("figs/04c_phi_ad_wr_sim_results.png", scale = 2)
 
 # calculate coverage and bias
 est_bc <- est %>%
