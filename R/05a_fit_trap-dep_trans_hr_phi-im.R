@@ -97,295 +97,98 @@ fit$diagnostic_summary()
 # load fitted model object 
 fit <- readRDS("outputs/05a_td_tr_hr_phi-im_fit.RDS")
 
-# plot adult survival estimates for wild-raised birds
-plt_phi_ad_wr <- fit$summary("phi_ad_wr") %>%
-  mutate(
-    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
-    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
-    year = 2012 + t,
-    site = case_when(
-      site_index == 1 ~ "Robben",
-      site_index == 2 ~ "Boulders",
-      site_index == 3 ~ "Stony"
-    ),
-    xshift = 0.1*case_when(
-      site_index == 1 ~ -1,
-      site_index == 2 ~ 0,
-      site_index == 3 ~ 1
-    )
-  ) %>%
-  ggplot( aes(x=year+xshift, colour=site) ) +
-  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2023 ) +
-  coord_cartesian( ylim=c(0,1) ) +
-  theme_classic() +
-  theme(
-    panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.75,0.25)
-  ) + 
-  labs( x= "year", y="estimate", title = "Adult survival for wild-raised birds")
-plt_phi_ad_wr
+# set colour scheme for colonies
+colony_colours <- viridisLite::mako(3, begin = 0.3, end= 0.8, direction = -1)
 
-# plot adult survival estimates for hand-reared birds
-plt_phi_ad_hr <- fit$summary("phi_ad_hr") %>%
-  mutate(
-    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
-    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
-    year = 2012 + t,
-    site = case_when(
-      site_index == 1 ~ "Robben",
-      site_index == 2 ~ "Boulders",
-      site_index == 3 ~ "Stony"
-    ),
-    xshift = 0.1*case_when(
-      site_index == 1 ~ -1,
-      site_index == 2 ~ 0,
-      site_index == 3 ~ 1
-    )
-  ) %>%
-  ggplot( aes(x=year+xshift, colour=site) ) +
-  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2023 ) +
-  coord_cartesian( ylim=c(0,1) ) +
-  theme_classic() +
-  theme(
-    panel.grid.major = element_line(),
-    legend.position = "none"
-  ) + 
-  labs( x= "year", y="estimate", title = "Adult survival for hand-reared birds")
-plt_phi_ad_hr
+# function to plot all parameters that vary by site and year
+plot_estimates_by_site_year <- function(fit, par) {
+  tib <- fit$summary(par) %>%
+    mutate(
+      site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
+      t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
+      year = 2012 + t,
+      site = case_when(
+        site_index == 1 ~ "Robben",
+        site_index == 2 ~ "Boulders",
+        site_index == 3 ~ "Stony"
+      ),
+      xshift = 0.1*case_when(
+        site_index == 1 ~ -1,
+        site_index == 2 ~ 0,
+        site_index == 3 ~ 1
+      )
+    ) 
+  x_breaks <- 2012 + 1:max(tib$t)
+  tib %>%
+    ggplot( aes(x=year+xshift, colour=site) ) +
+    geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.6, linewidth=0.8 ) +
+    scale_x_continuous( breaks=x_breaks ) +
+    scale_colour_manual(values = colony_colours) +
+    guides(colour = guide_legend(title = "Colony")) +
+    coord_cartesian( ylim=c(0,1) ) +
+    theme_classic() +
+    theme(
+      panel.grid.major = element_line(),
+      legend.text = element_text(size = 10)
+    ) + 
+    labs( x= "Year", y="Estimate")
+}
 
-# plot juvenile survival estimates for wild-raised birds
-plt_phi_jv_wr <- fit$summary("phi_jv_wr") %>%
-  mutate(
-    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
-    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
-    year = 2012 + t,
-    site = case_when(
-      site_index == 1 ~ "Robben",
-      site_index == 2 ~ "Boulders",
-      site_index == 3 ~ "Stony"
-    ),
-    xshift = 0.1*case_when(
-      site_index == 1 ~ -1,
-      site_index == 2 ~ 0,
-      site_index == 3 ~ 1
-    )
-  ) %>%
-  ggplot( aes(x=year+xshift, colour=site) ) +
-  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2023 ) +
-  coord_cartesian( ylim=c(0,1) ) +
-  theme_classic() +
-  theme(
-    panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.225,0.8)
-  ) + 
-  labs( x= "year", y="estimate", title = "Juvenile survival for wild-raised birds")
-plt_phi_jv_wr
+# function to plot parameters that only vary by year (just phi-im)
+plot_estimates_by_year <- function(fit, par) {
+  if (par != "phi_im") {
+    stop("plot_estimates_by_year only accepts 'phi_im' for the 'par' argument")
+  }
+  tib <- fit$summary(par) %>%
+    mutate(
+      t = as.integer( str_extract(variable,"(?<=\\[)[0-9]+(?=\\])") ),
+      year = 2012 + t,
+    ) 
+  x_breaks <- 2012 + 1:max(tib$t)
+  tib %>%
+    ggplot( aes(x=year) ) +
+    geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.6, linewidth=0.8,
+                     colour = "navyblue") +
+    scale_x_continuous( breaks=x_breaks ) +
+    coord_cartesian( ylim=c(0,1) ) +
+    theme_classic() +
+    theme(
+      panel.grid.major = element_line(),
+      legend.text = element_text(size = 10)
+    ) + 
+    labs( x= "Year", y="Estimate")
+}
 
-# plot juvenile survival estimates for hand-reared birds
-plt_phi_jv_hr <- fit$summary("phi_jv_hr") %>%
-  mutate(
-    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
-    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
-    year = 2012 + t,
-    site = case_when(
-      site_index == 1 ~ "Robben",
-      site_index == 2 ~ "Boulders",
-      site_index == 3 ~ "Stony"
-    ),
-    xshift = 0.1*case_when(
-      site_index == 1 ~ -1,
-      site_index == 2 ~ 0,
-      site_index == 3 ~ 1
-    )
-  ) %>%
-  ggplot( aes(x=year+xshift, colour=site) ) +
-  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2023 ) +
-  coord_cartesian( ylim=c(0,1) ) +
-  theme_classic() +
+# make survival plots
+(plt_phi_ad_wr <- plot_estimates_by_site_year(fit, "phi_ad_wr") +
   theme(
-    panel.grid.major = element_line(),
-    legend.position = "none"
-  ) + 
-  labs( x= "year", y="estimate", title = "Juvenile survival for hand-reared birds")
-plt_phi_jv_hr
-
-# immature survival
-plt_phi_im <- fit$summary("phi_im") %>%
-  mutate(
-    par = str_extract(variable, "[a-z_]+(?=\\[)"),
-    t = as.integer(str_extract(variable,"(?<=\\[)[0-9]+(?=\\])")),
-    year = 2012 + t,
-  ) %>%
-  ggplot(aes(x = year)) +
-  geom_pointrange(aes(y=median, ymin = q5, ymax = q95)) +
-  scale_x_continuous( breaks=2013:2023 ) +
-  coord_cartesian(ylim=c(0,1)) +
-  theme_classic() +
-  theme(
-    panel.grid.major = element_line()
+    legend.position = "inside",
+    legend.position.inside = c(0.5, 0.25)
   ) +
-  labs(
-    x = "Year", y = "Posterior median and 90% CrI", 
-    title = "Immature survival"
-  )
-plt_phi_im
-
-# plot 'residency' probabilities for newly marked adults
-plt_pi_r <- fit$summary("pi_r") %>%
-  mutate(
-    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
-    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
-    year = 2012 + t,
-    site = case_when(
-      site_index == 1 ~ "Robben",
-      site_index == 2 ~ "Boulders",
-      site_index == 3 ~ "Stony"
-    ),
-    xshift = 0.1*case_when(
-      site_index == 1 ~ -1,
-      site_index == 2 ~ 0,
-      site_index == 3 ~ 1
-    )
-  ) %>%
-  ggplot( aes(x=year+xshift, colour=site) ) +
-  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2023 ) +
-  coord_cartesian( ylim=c(0,1) ) +
-  theme_classic() +
+  labs(title = "Adult survival, wild-raised birds"))
+(plt_phi_ad_hr <- plot_estimates_by_site_year(fit, "phi_ad_hr") +
   theme(
-    panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.775,0.225)
-  ) + 
-  labs( x= "year", y="estimate", title = "Residency probability")
-plt_pi_r
+    legend.position = "inside",
+    legend.position.inside = c(0.5, 0.25)
+  ) +
+  labs(title = "Adult survival, hand-reared birds"))
+(plt_phi_jv_wr <- plot_estimates_by_site_year(fit, "phi_jv_wr") +
+    theme(
+      legend.position = "inside",
+      legend.position.inside = c(0.35, 0.8)
+    ) +
+    labs(title = "Juvenile survival, wild-raised birds"))
+(plt_phi_jv_hr <- plot_estimates_by_site_year(fit, "phi_jv_hr") +
+    theme(
+      legend.position = "inside",
+      legend.position.inside = c(0.35, 0.8)
+    ) +
+    labs(title = "Juvenile survival, hand-reared birds"))
+(plt_phi_im <- plot_estimates_by_year(fit, "phi_im") +
+    labs(title = "Immature survival, all birds and colonies"))
 
-# plot the detection parameters for 'trap-aware' adults
-plt_p_ad_A <- fit$summary("p_ad_A") %>%
-  mutate(
-    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
-    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
-    year = 2012 + t,
-    site = case_when(
-      site_index == 1 ~ "Robben",
-      site_index == 2 ~ "Boulders",
-      site_index == 3 ~ "Stony"
-    ),
-    xshift = 0.1*case_when(
-      site_index == 1 ~ -1,
-      site_index == 2 ~ 0,
-      site_index == 3 ~ 1
-    )
-  ) %>%
-  ggplot( aes(x=year+xshift, colour=site) ) +
-  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2024 ) +
-  coord_cartesian( ylim=c(0,1) ) +
-  theme_classic() +
-  theme(
-    panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.775,0.25)
-  ) + 
-  labs( x= "year", y="estimate", title = "Detection of trap-aware adults")
-plt_p_ad_A
-
-# plot the detection parameters for 'trap-unaware' adults
-plt_p_ad_U <- fit$summary("p_ad_U") %>%
-  mutate(
-    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
-    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
-    year = 2012 + t,
-    site = case_when(
-      site_index == 1 ~ "Robben",
-      site_index == 2 ~ "Boulders",
-      site_index == 3 ~ "Stony"
-    ),
-    xshift = 0.1*case_when(
-      site_index == 1 ~ -1,
-      site_index == 2 ~ 0,
-      site_index == 3 ~ 1
-    )
-  ) %>%
-  ggplot( aes(x=year+xshift, colour=site) ) +
-  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2024 ) +
-  coord_cartesian( ylim=c(0,1) ) +
-  theme_classic() +
-  theme(
-    panel.grid.major = element_line(),
-    legend.position = "none"
-  ) + 
-  labs( x= "year", y="estimate", title = "Detection of trap-unaware adults")
-plt_p_ad_U
-
-# plot the detection parameters for 'newly matured' adults 
-plt_p_ad_N <- fit$summary("p_ad_N") %>%
-  mutate(
-    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
-    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
-    year = 2012 + t,
-    site = case_when(
-      site_index == 1 ~ "Robben",
-      site_index == 2 ~ "Boulders",
-      site_index == 3 ~ "Stony"
-    ),
-    xshift = 0.1*case_when(
-      site_index == 1 ~ -1,
-      site_index == 2 ~ 0,
-      site_index == 3 ~ 1
-    )
-  ) %>%
-  ggplot( aes(x=year+xshift, colour=site) ) +
-  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2024 ) +
-  coord_cartesian( ylim=c(0,1) ) +
-  theme_classic() +
-  theme(
-    panel.grid.major = element_line(),
-    legend.position = "none"
-  ) + 
-  labs( x= "year", y="estimate", title = "Detection of newly-matured adults")
-plt_p_ad_N
-
-# immature detection
-plt_p_im <- fit$summary("p_im") %>%
-  mutate(
-    site_index = as.integer( str_extract(variable, "(?<=\\[)[1-9](?=,)")  ),
-    t = as.integer( str_extract(variable,"(?<=,)[0-9]+(?=\\])") ),
-    year = 2012 + t,
-    site = case_when(
-      site_index == 1 ~ "Robben",
-      site_index == 2 ~ "Boulders",
-      site_index == 3 ~ "Stony"
-    ),
-    xshift = 0.1*case_when(
-      site_index == 1 ~ -1,
-      site_index == 2 ~ 0,
-      site_index == 3 ~ 1
-    )
-  ) %>%
-  ggplot( aes(x=year+xshift, colour=site) ) +
-  geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.8, linewidth=0.8 ) +
-  scale_x_continuous( breaks=2013:2024 ) +
-  coord_cartesian( ylim=c(0,1) ) +
-  theme_classic() +
-  theme(
-    panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.375,0.7)
-  ) + 
-  labs( x= "year", y="estimate", title = "Detection of immatures")
-plt_p_im
-
-# movement parameters
-plt_mv <- fit$draws(format = "df") %>%
+# make movement plot
+(plt_mv <- fit$draws(format = "df") %>%
   select( starts_with("m_") ) %>%
   pivot_longer( everything(), names_to = "variable", values_to = "draw" ) %>%
   mutate(
@@ -404,27 +207,68 @@ plt_mv <- fit$draws(format = "df") %>%
     age_class = str_extract(variable, "m_[a-z]+")
   ) %>% 
   ggplot( aes(x = draw, fill = age_class ) ) +
-  geom_density( bounds = c(0,1), alpha = 0.5 ) +
+  geom_density( bounds = c(0,1), alpha = 0.7, linewidth = 0.2 ) +
   theme_classic() +
   theme(
-    panel.grid.major = element_line(),
+    panel.grid.major = element_line(colour = "grey95"),
     axis.title = element_blank(),
     axis.text.y = element_blank(),
-    axis.ticks.y = element_blank() 
+    axis.ticks.y = element_blank(),
+    legend.position = "inside",
+    legend.position.inside = c(0.9, 0.5)
   ) +
   scale_fill_manual(
-    values=c("m_ad"="red", "m_jv"="blue"),
-    labels=c("m_ad"="adult", "m_jv"="jv. & imm.")
+    values=c("m_ad"="navyblue", "m_jv"="skyblue"),
+    labels=c("m_ad"="Adult", "m_jv"="Juv. & imm.")
   ) +
   coord_cartesian( xlim = c(0,1), ylim = c(0,30) ) +
   facet_grid(rows = vars(site_from), cols = vars(site_to), switch = "y" ) +
   labs(
-    title = "Posterior distributions for movement probabilities",
-    y = "Density",
+    title = "Movement probabilities, all birds",
     x = "Probability",
     fill = "Age class"
-  )
-plt_mv
+  ))
+
+# combine plots of survival and movement
+plot_grid(
+  plt_phi_ad_wr, plt_phi_ad_hr, plt_phi_jv_wr, plt_phi_jv_hr, plt_phi_im, plt_mv,
+  nrow = 3, ncol = 2, labels = "auto"
+)
+# ggsave("figs/05a_survival_movement_estimates.png", height = 12, width = 12)
+
+# make detection plots
+(plt_p_ad_A <- plot_estimates_by_site_year(fit, "p_ad_A") +
+    theme(
+      legend.position = "inside",
+      legend.position.inside = c(0.8, 0.175)
+    ) +
+    labs(
+      title = "Detection of trap-aware adults"
+    ))
+(plt_p_ad_U <- plot_estimates_by_site_year(fit, "p_ad_U") +
+    theme(
+      legend.position = "inside",
+      legend.position.inside = c(0.8, 0.175)
+    ) +
+    labs(
+      title = "Detection of trap-unaware adults"
+    ))
+(plt_p_ad_N <- plot_estimates_by_site_year(fit, "p_ad_N") +
+    theme(
+      legend.position = "inside",
+      legend.position.inside = c(0.75, 0.175)
+    ) +
+    labs(
+      title = "Detection of newly-matured adults"
+    ))
+(plt_p_im <- plot_estimates_by_site_year(fit, "p_im") +
+    theme(
+      legend.position = "inside",
+      legend.position.inside = c(0.8, 0.775)
+    ) +
+    labs(
+      title = "Detection of immatures"
+    ))
 
 # posteriors for hand-rearing coefficient (logit scale)
 plt_hr_diffs <- fit$draws(c("hr_jv", "hr_ad"), format = "df") %>%
@@ -444,7 +288,7 @@ plt_hr_diffs <- fit$draws(c("hr_jv", "hr_ad"), format = "df") %>%
   )
 plt_hr_diffs
 
-# arrange plots in grid and save
+# combine all plots in grid and save
 plt_estimates <- plot_grid(
   plt_phi_ad_wr, plt_phi_ad_hr,
   plt_phi_jv_wr, plt_phi_jv_hr,
