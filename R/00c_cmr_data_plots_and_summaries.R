@@ -33,8 +33,8 @@ newly_marked %>%
   theme_classic() +
   theme(
     panel.grid.major = element_line(colour = "grey95"),
-    legend.position.inside = TRUE,
-    legend.position = c(0.3, 0.8)
+    legend.position.inside = c(0.3, 0.8),
+    legend.position = "inside"
   ) +
   facet_grid(
     hr ~ marking_site, 
@@ -44,7 +44,7 @@ newly_marked %>%
     )
   ) +
   labs(x = "Year", y = "Number of newly marked birds")
-# ggsave("figs/00c_number_newly_marked_birds.png", scale = 1.2)
+# ggsave("figs/00c_number_newly_marked_birds.png", height = 4, width = 7)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ---- How many wild-raised birds marked as chicks were observed as adults? ----

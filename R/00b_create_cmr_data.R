@@ -11,6 +11,34 @@ enc_wca <- readRDS("data/encounter_wca.RDS")
 colonies <- c("Robben", "Boulders", "Stony")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#       ---- Remove birds marked as adults at one of the rehabs ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#' These are birds that were rehabilitated as adults, which we don't want to
+#' include in the analysis.
+
+# get their ids
+pids_birds_rehabilitated_as_adults <- enc_wca %>%
+  filter(
+    type == "M",
+    age == "A",
+    str_detect(loc, "Rehab")
+  ) %>%
+  pull(primary_id)
+
+# how many are there
+length(pids_birds_rehabilitated_as_adults)
+
+# check they're all unique (they should be)
+# length(unique(pids_birds_rehabilitated_as_adults)) 
+
+# remove them
+enc_wca <- enc_wca %>%
+  filter(!(primary_id %in% pids_birds_rehabilitated_as_adults))
+
+# tidy environment
+rm(pids_birds_rehabilitated_as_adults)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #       ---- Identify and subset birds 'belonging' to colonies ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Identify all birds 'belonging' to selected colonies because they were either 
