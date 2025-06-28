@@ -85,11 +85,16 @@ for (i in 1:3) {
 file <- "stan/05_td_tr_hr_phi-im.stan"
 mod <- cmdstan_model(file)
 stan_data <- list(T=T, marr_wr=marr_wr, marr_hr = marr_hr, N_1=N_1, N_0=N_0)
-fit <- mod$sample(stan_data, parallel_chains = 4)
+fit <- mod$sample(stan_data, parallel_chains = 4, adapt_delta = 0.9)
 fit$save_object("outputs/05a_td_tr_hr_phi-im_fit.RDS")
 
-# diagnostic summary
+# sampler diagnostics
 fit$diagnostic_summary()
+
+# rhats and ess's
+fit_summary <- fit$summary() %>% filter(variable != "lp__") 
+max(fit_summary$rhat)
+min(fit_summary$ess_bulk)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #               ---- Plot estimates ----
@@ -123,6 +128,7 @@ plot_estimates_by_site_year <- function(fit, par) {
     ggplot( aes(x=year+xshift, colour=site) ) +
     geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.6, linewidth=0.8 ) +
     scale_x_continuous( breaks=x_breaks ) +
+    scale_y_continuous( breaks=seq(0,1,length.out=6) ) +
     scale_colour_manual(values = colony_colours) +
     guides(colour = guide_legend(title = "Colony")) +
     coord_cartesian( ylim=c(0,1) ) +
@@ -150,6 +156,7 @@ plot_estimates_by_year <- function(fit, par) {
     geom_pointrange( aes(y=median, ymin=q5, ymax=q95), size=0.6, linewidth=0.8,
                      colour = "navyblue") +
     scale_x_continuous( breaks=x_breaks ) +
+    scale_y_continuous( breaks=seq(0,1,length.out=6) ) +
     coord_cartesian( ylim=c(0,1) ) +
     theme_classic() +
     theme(
@@ -208,6 +215,7 @@ plot_estimates_by_year <- function(fit, par) {
   ) %>% 
   ggplot( aes(x = draw, fill = age_class ) ) +
   geom_density( bounds = c(0,1), alpha = 0.7, linewidth = 0.2 ) +
+  scale_x_continuous(breaks = seq(0,1,length.out=6)) +
   theme_classic() +
   theme(
     panel.grid.major = element_line(colour = "grey95"),
