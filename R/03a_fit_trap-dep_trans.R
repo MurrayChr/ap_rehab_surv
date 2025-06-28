@@ -67,6 +67,11 @@ fit <- mod$sample(stan_data, parallel_chains = 4)
 # sampler diagnostics
 fit$diagnostic_summary()
 
+# rhats and ess's
+fit_summary <- fit$summary() %>% filter(variable != "lp__") 
+max(fit_summary$rhat)
+min(fit_summary$ess_bulk)
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                        ---- Plot estimates ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,8 +101,8 @@ plt_phi_ad <- fit$summary("phi_ad") %>%
   theme_classic() +
   theme(
     panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.75,0.25)
+    legend.position = "inside",
+    legend.position.inside = c(0.75,0.25)
   ) + 
   labs( x= "year", y="estimate", title = "Adult survival")
 plt_phi_ad
@@ -126,8 +131,8 @@ plt_phi_jv <- fit$summary("phi_jv") %>%
   theme_classic() +
   theme(
     panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.225,0.8)
+    legend.position = "inside",
+    legend.position.inside = c(0.225,0.8)
   ) + 
   labs( x= "year", y="estimate", title = "Juvenile survival")
 plt_phi_jv
@@ -156,8 +161,8 @@ plt_pi_r <- fit$summary("pi_r") %>%
   theme_classic() +
   theme(
     panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.225,0.8)
+    legend.position = "inside",
+    legend.position.inside = c(0.225,0.8)
   ) + 
   labs( x= "year", y="estimate", title = "Residency probability")
 plt_pi_r
@@ -186,8 +191,8 @@ plt_p_ad_A <- fit$summary("p_ad_A") %>%
   theme_classic() +
   theme(
     panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.775,0.25)
+    legend.position = "inside",
+    legend.position.inside = c(0.775,0.25)
   ) + 
   labs( x= "year", y="estimate", title = "Detection of trap-aware adults")
 plt_p_ad_A
@@ -274,8 +279,8 @@ plt_p_im <- fit$summary("p_im") %>%
   theme_classic() +
   theme(
     panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.375,0.7)
+    legend.position = "inside",
+    legend.position.inside = c(0.375,0.7)
   ) + 
   labs( x= "year", y="estimate", title = "Detection of immatures")
 plt_p_im
