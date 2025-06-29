@@ -100,7 +100,7 @@ fit_summary <- fit$summary()
 max(fit_summary$rhat)
 min(fit_summary$ess_bulk)
 
-# there are only two residency probabilities with rhat just over 1.01
+# there' one residency probability with rhat just over 1.01
 filter(fit_summary, rhat > 1.01)
 
 #' So we'll go ahead and use the posterior sample...
@@ -135,8 +135,8 @@ plt_phi_ad_wr <- fit$summary("phi_ad_wr") %>%
   theme_classic() +
   theme(
     panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.75,0.25)
+    legend.position = "inside",
+    legend.position.inside = c(0.75,0.25)
   ) + 
   labs( x= "year", y="estimate", title = "Adult survival for wild-raised birds")
 plt_phi_ad_wr
@@ -194,8 +194,8 @@ plt_phi_jv_wr <- fit$summary("phi_jv_wr") %>%
   theme_classic() +
   theme(
     panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.225,0.8)
+    legend.position = "inside",
+    legend.position.inside = c(0.225,0.85)
   ) + 
   labs( x= "year", y="estimate", title = "Juvenile survival for wild-raised birds")
 plt_phi_jv_wr
@@ -274,8 +274,8 @@ plt_pi_r <- fit$summary("pi_r") %>%
   theme_classic() +
   theme(
     panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.775,0.225)
+    legend.position = "inside",
+    legend.position.inside = c(0.775,0.225)
   ) + 
   labs( x= "year", y="estimate", title = "Residency probability")
 plt_pi_r
@@ -392,8 +392,8 @@ plt_p_im <- fit$summary("p_im") %>%
   theme_classic() +
   theme(
     panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.375,0.7)
+    legend.position = "inside",
+    legend.position.inside = c(0.375,0.7)
   ) + 
   labs( x= "year", y="estimate", title = "Detection of immatures")
 plt_p_im
