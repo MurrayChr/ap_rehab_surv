@@ -369,7 +369,7 @@ plt <- est %>%
 plt
 ggsave("figs/04c_phi_ad_wr_sim_results.png", scale = 2)
 
-# calculate coverage and bias
+# calculate coverage, bias and root mean squared error
 est_bc <- est %>%
   mutate(
     cover = (q5 < truth) & (truth < q95),
@@ -378,7 +378,8 @@ est_bc <- est %>%
   group_by(site, t) %>%
   summarise(
     coverage = mean(cover),
-    bias = mean(bias)
+    rmse = sqrt(mean((bias)^2)), # danger: we rewrite 'bias' in next line, so must do this first
+    bias = mean(bias),
   ) %>%
   ungroup() 
 
@@ -447,6 +448,7 @@ hr_bc <- hr_est %>%
   ) %>%
   group_by(variable) %>%
   summarise(
+    rmse = sqrt(mean((bias)^2)),
     bias = mean(bias),
     coverage = mean(cover),
     n_covered = sum(cover)
