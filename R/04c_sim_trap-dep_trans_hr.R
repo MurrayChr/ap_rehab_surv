@@ -57,15 +57,12 @@ generate_parameter_values <- function(fit, real_cmr_data) {
   
   # residency probabilities drawn from distributions roughly modeled on
   # posterior distributions from the fit to real data: for most site-years
-  # we use a Beta(9,1), but for five site-years where the model 01's goodness-of-fit 
+  # we use a Beta(9,1), but for a few site-years where model 01's goodness-of-fit 
   # flagged transients and the residence probabilities were lower, we used 
   # different distributions
   pi_r <- matrix(rbeta(3*(T-1), 9, 1), nrow = 3, ncol = T-1)
-  pi_r[2,5] <- rbeta(1, 24, 36)
-  pi_r[3,5] <- rbeta(1, 60, 20)
-  pi_r[3,6] <- rbeta(1, 26, 24)
-  pi_r[2,7] <- rbeta(1, 66, 34)
-  pi_r[3,7] <- rbeta(1, 78, 22)
+  pi_r[2,5] <- rbeta(1, 37, 63) 
+  pi_r[2,7] <- rbeta(1, 60, 40)  
   
   # detection probabilities drawn randomly from the posterior samples
   post <- fit$draws(
