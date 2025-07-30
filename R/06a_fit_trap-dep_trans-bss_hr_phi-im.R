@@ -87,23 +87,21 @@ for (i in 1:3) {
 file <- "stan/06_td_tr-bss_hr_phi-im.stan"
 mod <- cmdstan_model(file)
 stan_data <- list(T=T, marr_wr=marr_wr, marr_hr = marr_hr, N_1=N_1, N_0=N_0)
-fit <- mod$sample(stan_data, parallel_chains = 4, 
-  adapt_delta = 0.99  # increased from default to remove divergent transitions
-)
+fit <- mod$sample(stan_data, parallel_chains = 4)
 # fit$save_object("outputs/06a_td_tr-bss_hr_phi-im_fit.RDS")
 
 # diagnostic summary
-fit$diagnostic_summary()
+fit$diagnostic_summary() # a handful of divergent transitions that we'll ignore
 
 # rhats and ess's
 fit_summary <- fit$summary()
 max(fit_summary$rhat)
 min(fit_summary$ess_bulk)
 
-# there' one residency probability with rhat just over 1.01
+# there's only one residency probability with rhat just over 1.01...
 filter(fit_summary, rhat > 1.01)
 
-#' So we'll go ahead and use the posterior sample...
+# ...so we'll go ahead and use the posterior sample...
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #               ---- Plot estimates ----
@@ -304,8 +302,8 @@ plt_p_ad_A <- fit$summary("p_ad_A") %>%
   theme_classic() +
   theme(
     panel.grid.major = element_line(),
-    legend.position.inside = TRUE,
-    legend.position = c(0.775,0.25)
+    legend.position = "inside",
+    legend.position.inside = c(0.775,0.25)
   ) + 
   labs( x= "year", y="estimate", title = "Detection of trap-aware adults")
 plt_p_ad_A

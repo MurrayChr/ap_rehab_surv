@@ -111,8 +111,8 @@ functions {
     // spike-and-slab-like mixture of betas
     real bss_lpdf(real x) {
       // hard-coding the beta distributions' parameters 
-      int w_spike = 25;
-      int w_slab = 5;
+      int w_spike = 26;
+      int w_slab = 4;
       int alpha_spike = 99;
       int beta_spike = 1;
       int alpha_slab = 2;
