@@ -240,6 +240,21 @@ for (i in 1:n_reps) {
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#         ---- Check model diagnostiscs across simulations ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# divergent transitions
+n_reps <- 100
+n_div <- rep(NA, n_reps)
+for (i in 1:n_reps) {
+  # read in sim and fit
+  file_num <-  str_pad(i, 3, "left", "0")
+  fit <- readRDS(str_c("outputs/sim_04/fitted_models/04c_", file_num, "_fit.RDS"))
+  n_div[i] <- fit$diagnostic_summary()$num_divergent %>% sum()
+}
+sum(n_div > 0) # no models had any divergences
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #         ---- Compare estimates to truth in a single replicate ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -289,9 +304,13 @@ rep_cmr_data$truth[c("hr_jv", "hr_ad")]
 #            ---- Estimates vs truth across replicates ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-est <- tibble()
+# uncomment to select a paramter
+# par <- "phi_ad_wr"
+par <- "phi_jv_wr"
+
+# collect truth and estimates from each simulation
 n_reps <- 100
-par <- "phi_ad_wr"
+est <- tibble()
 for (i in 1:n_reps) {
   # read in sim and fit
   file_num <-  str_pad(i, 3, "left", "0")
@@ -308,7 +327,6 @@ for (i in 1:n_reps) {
       t = as.integer(str_extract(variable,"(?<=,)[0-9]+(?=\\])")),
       .after = site
     )
-  
   
   # get true data-generating values and format as sim_est
   sim_truth <- rep_cmr_data$truth[[par]] 
@@ -327,8 +345,8 @@ for (i in 1:n_reps) {
   est <- rbind(est, sim_tib)
 }
 
-# plot
-plt <- est %>%
+# add year and site name (used to label facets in plot)
+est <- est %>%
   mutate(
     year = t + 2012,
     site_name = case_when(
@@ -336,61 +354,63 @@ plt <- est %>%
       site == 2 ~ "Boulders",
       site == 3 ~ "Stony"
     )
-  ) %>%
+  )
+
+# plot
+plt <- est %>%
   ggplot(aes(x = truth)) +
   geom_point(aes(y = median), size = 0.5) +
   geom_linerange(aes(ymin = q5, ymax = q95), alpha = 0.2 ) +
   coord_fixed(xlim = c(0,1), ylim = c(0,1)) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", alpha = 0.5) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", alpha = 0.1) +
   theme_classic() +
   scale_x_continuous(breaks = seq(0,1,length.out = 3)) +
   scale_y_continuous(breaks = seq(0,1,length.out = 3)) +
   theme(
     panel.grid.major = element_line(linewidth = 0.3)
   ) +
-  facet_grid(
-    # rows = vars(site), 
-    # cols = vars(t)
-    rows = vars(site_name),
-    cols = vars(year)
-  ) +
+  facet_grid(factor(site_name, levels = c("Robben", "Boulders", "Stony")) ~ year) + # convert site_name to factor so that levels can be ordered manually
   labs(
     x = "Truth",
     y = "Estimate",
     title = case_when(
       par == "phi_ad_wr" ~ "Adult survival, wild-raised birds",
-      par == "phi_jv_wr" ~ "Juvenile survival, wild-raised birds",
-      par == "pi_r" ~ "Residency probability"
+      par == "phi_jv_wr" ~ "Juvenile survival, wild-raised birds"
     )
   )
 plt
-ggsave("figs/04c_phi_ad_wr_sim_results.png", scale = 2)
 
 # calculate coverage, bias and root mean squared error
 est_bc <- est %>%
   mutate(
     cover = (q5 < truth) & (truth < q95),
-    bias = median - truth
+    bias = median - truth,
+    bias_squared = bias^2
   ) %>%
-  group_by(site, t) %>%
+  group_by(year, site_name) %>%
   summarise(
     coverage = mean(cover),
-    rmse = sqrt(mean((bias)^2)), # danger: we rewrite 'bias' in next line, so must do this first
     bias = mean(bias),
+    rmse = sqrt(mean(bias_squared)),
   ) %>%
   ungroup() 
 
 bc_text <- est_bc %>%
   mutate(
-    label = str_c(coverage,"; ",round(bias, 2))
+    label = str_c(
+      "cover = ", coverage, "\n",
+      "bias = ", round(bias,2), "\n",
+      "rmse = ", signif(rmse, 1)
+    )
   ) %>%
-  add_column(x = 0.7, y = 0.1)
+  add_column(x = 0.75, y = 0.13)
 
 plt +
   geom_text(
     data = bc_text,
     mapping = aes(x = x, y = y, label = label),
-    colour = "red"
+    colour = "grey30",
+    size = 2
   )
 # ggsave(str_c("figs/04c_",par,"_sim_results.png"), height = 6, width = 18)
 
@@ -434,10 +454,10 @@ hr_plot <- hr_est %>%
   ) +
   facet_wrap(vars(variable), labeller = as_labeller(facet_labs)) +
   labs(x = "Truth", y = "Estimate", 
-       title = "Age-dependent hand-rearing differences" )
+       title = "Age-dependent hand-rearing differences (logit-scale)" )
 hr_plot
 
-# compute bias and coverage
+# compute bias, coverage and rmse
 hr_bc <- hr_est %>%
   mutate(
     bias = median - truth,
@@ -455,20 +475,22 @@ hr_bc <- hr_est %>%
 # code to add annotations from the R Language-recommended answer at
 # https://stackoverflow.com/questions/11889625/annotating-text-on-individual-facet-in-ggplot2
 
-bias_text <- hr_bc %>%
-  add_column(x = -0.8*c(1,1), y = c(.75, .75)) %>%
-    mutate(label = str_c("bias = ", signif(bias,1)))
-cvrg_text <- hr_bc %>%
-  add_column(x = c(-0.65,-0.65), y = c(1.05, 1.05)) %>%
-  mutate(label = str_c("coverage = ", signif(coverage,2)))
+bc_text <- hr_bc %>%
+  mutate(
+    label = str_c(
+      "cover = ", coverage, "\n",
+      "bias = ", signif(bias,1), "\n",
+      "rmse = ", signif(rmse, 1)
+    )
+  ) %>%
+  add_column(x = 0.75, y = -1)
+  
 hr_plot +
   geom_text(
-    data = bias_text,
-    mapping = aes(x = x, y = y, label = label)
-  ) +
-  geom_text(
-    data = cvrg_text,
-    mapping = aes(x = x, y = y, label = label)
-  )
+    data = bc_text,
+    mapping = aes(x = x, y = y, label = label),
+    colour = "grey20",
+    size = 2.5
+  ) 
 # ggsave("figs/04c_hr_sim_results.png", scale = 1.5)
 
