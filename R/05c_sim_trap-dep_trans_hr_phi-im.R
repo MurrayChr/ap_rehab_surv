@@ -231,8 +231,7 @@ get_stan_data <- function(rep_cmr_data) {
 # Fit each replicate dataset and save to outputs/sim_05/fitted_models
 mod_file <- "stan/05_td_tr_hr_phi-im.stan"
 mod <- cmdstan_model(mod_file)
-# for (i in 1:n_reps) {
-for (i in 95:n_reps) {
+for (i in 1:n_reps) {
   file_num <-  str_pad(i, 3, "left", "0")
   cmr_data_file <- str_c("outputs/sim_05/rep_data/05c_", file_num, ".RDS")
   rep_cmr_data <- readRDS(cmr_data_file)
