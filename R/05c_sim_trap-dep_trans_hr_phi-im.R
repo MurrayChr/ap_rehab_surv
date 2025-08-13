@@ -306,9 +306,9 @@ rep_cmr_data$truth[c("hr_jv", "hr_ad")]
 #            ---- Estimates vs truth across replicates ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# uncomment to select a paramter
-# par <- "phi_ad_wr"
-par <- "phi_jv_wr"
+# uncomment to select a parameter
+par <- "phi_ad_wr"
+# par <- "phi_jv_wr"
 
 # collect truth and estimates from each simulation
 n_reps <- 100
@@ -417,6 +417,101 @@ plt +
 # ggsave(str_c("figs/05c_",par,"_sim_results.png"), height = 6, width = 18)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#             ---- Immature survival across replicates ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+par <- "phi_im"
+
+# collect truth and estimates from each simulation
+n_reps <- 100
+est <- tibble()
+for (i in 1:n_reps) {
+  # read in sim and fit
+  file_num <-  str_pad(i, 3, "left", "0")
+  rep_cmr_data <- readRDS(str_c("outputs/sim_05/rep_data/05c_", file_num, ".RDS"))
+  fit <- readRDS(str_c("outputs/sim_05/fitted_models/05c_", file_num, "_fit.RDS"))
+  
+  # get posterior summaries for parameters
+  sim_est <- fit$summary(par)[,c("variable", "median", "q5", "q95")] %>%
+    mutate(
+      t = as.integer(str_extract(variable,"(?<=\\[)[0-9]+(?=\\])")),
+      .after = variable
+    )
+  
+  # get true data-generating values and format as sim_est
+  sim_truth <- tibble(
+    t = 1:length(rep_cmr_data$truth[[par]]),
+    truth = rep_cmr_data$truth[[par]]
+  )
+
+  # join estimates and truth
+  sim_tib <- left_join(sim_est, sim_truth, by = c("t")) %>%
+    add_column(sim_id = i, .before = "variable")
+  sim_tib
+  
+  # add values from this sim to others
+  est <- rbind(est, sim_tib)
+}
+
+# add year 
+est <- est %>%  mutate(year = t + 2012, .after = t)
+
+# plot
+plt <- est %>%
+  ggplot(aes(x = truth)) +
+  geom_point(aes(y = median), size = 0.5) +
+  geom_linerange(aes(ymin = q5, ymax = q95), alpha = 0.2 ) +
+  coord_fixed(xlim = c(0,1), ylim = c(0,1)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", alpha = 0.1) +
+  theme_classic() +
+  scale_x_continuous(breaks = seq(0,1,length.out = 3)) +
+  scale_y_continuous(breaks = seq(0,1,length.out = 3)) +
+  theme(
+    panel.grid.major = element_line(linewidth = 0.3)
+  ) +
+  facet_grid( ~ year) + 
+  labs(
+    x = "Truth",
+    y = "Estimate",
+    title = "Immature survival"
+  )
+plt
+
+# calculate coverage, bias and root mean squared error
+est_bc <- est %>%
+  mutate(
+    cover = (q5 < truth) & (truth < q95),
+    bias = median - truth,
+    bias_squared = bias^2
+  ) %>%
+  group_by(year) %>%
+  summarise(
+    coverage = mean(cover),
+    bias = mean(bias),
+    rmse = sqrt(mean(bias_squared)),
+  ) %>%
+  ungroup() 
+
+bc_text <- est_bc %>%
+  mutate(
+    label = str_c(
+      "cover = ", coverage, "\n",
+      "bias = ", round(bias,2), "\n",
+      "rmse = ", signif(rmse, 1)
+    )
+  ) %>%
+  add_column(x = 0.75, y = 0.13)
+
+plt +
+  geom_text(
+    data = bc_text,
+    mapping = aes(x = x, y = y, label = label),
+    colour = "grey30",
+    size = 2
+  )
+# ggsave(str_c("figs/05c_",par,"_sim_results.png"), height = 2, width = 16)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #            ---- Hand-rearing parameters across replicates ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -495,3 +590,94 @@ hr_plot +
     size = 2.5
   ) 
 # ggsave("figs/05c_hr_sim_results.png", scale = 1.5)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#      ---- Table of bias, coverage and rmse for survival parameters ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+pars <- c("phi_ad_wr", "phi_im", "phi_jv_wr")
+n_reps <- 100
+est <- tibble()
+for (i in 1:n_reps) {
+  # read in sim and fit
+  file_num <-  str_pad(i, 3, "left", "0")
+  rep_cmr_data <- readRDS(str_c("outputs/sim_05/rep_data/05c_", file_num, ".RDS"))
+  fit <- readRDS(str_c("outputs/sim_05/fitted_models/05c_", file_num, "_fit.RDS"))
+  
+  # get posterior summaries for parameters
+  sim_est <- fit$summary(pars)[,c("variable", "median", "q5", "q95")] %>%
+    mutate(
+      site = ifelse(
+        str_detect(variable, ","),
+        as.integer(str_extract(variable, "(?<=\\[)[1-9](?=,)")),
+        NA
+      ), .after = variable
+    ) %>%
+    mutate(
+      t = ifelse(
+        str_detect(variable, ","),
+        as.integer(str_extract(variable,"(?<=,)[0-9]+(?=\\])")),
+        as.integer(str_extract(variable,"(?<=\\[)[0-9]+(?=\\])"))
+      ), .after = site
+    ) %>%
+    mutate(
+      var_name = str_extract(variable, "[a-z_]+(?=\\[)"), .after = variable
+    )
+  
+  # get truth for parameters and format as sim_est
+  sim_truth <- tibble()
+  for (par in pars) {
+    true_vals <- rep_cmr_data$truth[[par]] 
+    if (is.matrix(true_vals)) {
+      colnames(true_vals) <- 1:ncol(true_vals)   
+      true_vals <- as_tibble(true_vals) %>%
+        add_column(site = 1:3) %>%
+        pivot_longer(-"site", names_to = "t", values_to = "truth") %>%
+        mutate(t = as.integer(t)) %>%
+        add_column(var_name = par)
+      sim_truth <- rbind(sim_truth, true_vals)
+    }
+    if (is.numeric(true_vals)) {
+      true_vals <- tibble(
+        t = 1:length(rep_cmr_data$truth[[par]]),
+        truth = rep_cmr_data$truth[[par]],
+        site = NA,
+        var_name = par
+      )
+      sim_truth <- rbind(sim_truth, true_vals)
+    }
+  }
+  
+  # join estimates and truth
+  sim_tib <- left_join(sim_est, sim_truth, by = c("var_name", "site", "t")) %>%
+    add_column(sim_id = i, .before = "var_name")
+  sim_tib
+  
+  # add values from this sim to others
+  est <- rbind(est, sim_tib)
+}
+  
+# add year 
+est <- est %>%  mutate(year = t + 2012, .after = t)
+
+# calculate bias, coverage and root-mean-square-error
+est_bias_cover_rmse <- est %>%
+  group_by(variable, var_name, site, t, year, sim_id) %>%
+  mutate(
+    bias = median - truth,
+    bias_squared = bias^2,
+    cover = (q5 < truth) & (truth < q95)
+  ) %>%
+  ungroup() %>%
+  group_by(variable, var_name, site, t, year) %>%
+  summarise(
+    rmse = sqrt(mean(bias_squared)),
+    bias = mean(bias),
+    coverage = mean(cover)
+  ) %>%
+  ungroup() %>%
+  arrange(var_name, site, t)
+
+# export for use in plotting estimates from model 05
+# saveRDS(est_bias_cover_rmse, "outputs/sim_05/05c_survival_bias_coverage_rmse.RDS")
+
