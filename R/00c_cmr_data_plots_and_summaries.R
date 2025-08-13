@@ -341,3 +341,147 @@ nrow(target_cmr_data)
 # proportion seen as immatures
 mean(target_cmr_data$fc_plus_one_code != 0)
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#          ---- Adult age distributions in the Stony data ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#' Here we compare the age distributions for adults between hand-reared and
+#' wild-raised birds in the Stony dataset, which consists only of birds marked
+#' as fledglings. 
+
+# load, subset and prepare Stony data as in 07a_fit_stony_td_hr.R
+# load data with states coded with trap-dependence
+cmr_data <- readRDS("data/00b_cmr_data_multisite_multiage_trapdep.RDS")
+
+# filter for Stony birds marked as juveniles
+cmr_data <- cmr_data %>%
+  filter(
+    marking_site == "Stony",
+    marking_age == 1
+  ) 
+
+# set number of years
+T <- sum(str_starts(colnames(cmr_data),"yr"))
+
+# extract capture history matrix
+y <- cmr_data %>%
+  select( starts_with("yr") ) %>%
+  as.matrix()
+fc <- cmr_data$fc
+hr <- cmr_data$hr
+
+# recode entries for get_marray()
+# the codes in y are:
+table(c(y))
+# first, all codes relating to Robben and Boulders changed to zero
+y[y %in% 1:8] <- 0
+# second, codes for Stony mapped to 1:4
+y[y==9] <- 1    # juvenile
+y[y==10] <- 2   # immature
+y[y==11] <- 3   # adult, trap-aware
+y[y==12] <- 4   # adult, trap-unaware
+
+# change zeros after first capture to nStates + 1 = 5
+for (i in 1:nrow(y)) {
+  y[i,fc[i]:T][y[i, fc[i]:T]==0] <- 5
+}
+
+# last capture occasion
+lc <- apply(y, 1, function(x) (max(which(x!=5))))
+
+# create matrix with age of each individual in the years they're known to be alive
+ages <- matrix(NA, nrow = nrow(y), ncol = T)
+for (i in 1:nrow(y)) {
+  ages[i, fc[i]:lc[i]] <- (0:T)[1:(lc[i]-fc[i]+1)]
+}
+
+# summarise over individuals
+ages_hr <- ages[hr == 1,]
+ages_wr <- ages[hr == 0,]
+age_distr_hr_all_years <- table(ages_hr, useNA = "no") %>%
+  as_tibble() %>%
+  rename(age = ages_hr) %>%
+  mutate(age = as.integer(age)) %>%
+  add_column(hr = "hr")
+age_distr_wr_all_years <- table(ages_wr, useNA = "no") %>%
+  as_tibble() %>%
+  rename(age = ages_wr) %>%
+  mutate(age = as.integer(age)) %>%
+  add_column(hr = "wr")
+age_distr_all_years <- rbind(age_distr_hr_all_years, age_distr_wr_all_years)
+
+# create age distributions for adults pooled over all years
+ad_age_distr_all_years <- age_distr_all_years %>%
+  filter(age >= 1) %>%  # immature survival (1yo) lumped with adult survival (2+) in Stony model
+  complete(age, hr, fill = list(n = 0)) # complete age x hr combinations
+
+# add within-group proportions for each age
+ad_age_distr_all_years <- ad_age_distr_all_years %>%
+  group_by(hr) %>%
+  mutate(
+    p = n/sum(n), .after = n
+  ) %>%
+  ungroup() 
+
+# plot (mirror)
+# balance_plt_colours <- viridisLite::mako(2, begin = 0.3, end = 0.7)
+# ad_age_distr_all_years %>%
+#   mutate(signed_proportion = ifelse(hr == "hr", 1, -1)*p) %>%
+#   ggplot(aes(x = age, y = signed_proportion, fill = as.factor(hr))) +
+#   geom_col(position = "identity") +
+#   scale_x_continuous(breaks = 1:10) + 
+#   scale_y_continuous(
+#     breaks = seq(-0.3, 0.3, length.out = 7),
+#     labels = abs(seq(-0.3, 0.3, length.out = 7))
+#   ) +
+#   scale_fill_manual(
+#     breaks = c("hr", "wr"),
+#     labels = c("hr" = "hand-reared", "wr" = "wild-raised"),
+#     values = balance_plt_colours
+#   ) +
+#   labs(
+#     title = "'Adult' age distributions in Stony dataset, pooled over years",
+#     y = "Proportion of 'adults' per group", x = "Age"
+#   ) +
+#   theme_classic() +
+#   theme(
+#     panel.grid.major = element_line(colour = "grey95"),
+#     legend.position = "inside",
+#     legend.position.inside = c(0.775,0.175),
+#     legend.title = element_blank(),
+#     legend.text = element_text(size = 12),
+#     axis.title = element_text(size = 12),
+#     axis.text = element_text(size = 12)
+#   )
+  
+# plot (dodged) - this one makes it easier to compare distributions
+balance_plt_colours <- viridisLite::mako(2, begin = 0.3, end = 0.7)
+ad_age_distr_all_years %>%
+  mutate(signed_proportion = ifelse(hr == "hr", 1, -1)*p) %>%
+  ggplot(aes(x = age, y = p, fill = as.factor(hr))) +
+  geom_col(position = "dodge", alpha = 0.9) +
+  scale_x_continuous(breaks = 1:10) + 
+  scale_y_continuous(
+    breaks = seq(-0.3, 0.3, length.out = 7)
+  ) +
+  scale_fill_manual(
+    breaks = c("hr", "wr"),
+    labels = c("hr" = "hand-reared", "wr" = "wild-raised"),
+    values = balance_plt_colours
+  ) +
+  labs(
+    title = "'Adult' age distributions in Stony dataset, pooled over years",
+    y = "Proportion of 'adults' per group", x = "Age"
+  ) +
+  theme_classic() +
+  theme(
+    panel.grid.major = element_line(colour = "grey95"),
+    legend.position = "inside",
+    legend.position.inside = c(0.775,0.475),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 12),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12)
+  )
+# ggsave("figs/00c_number_adult-imms_known_to_be_alive_stony.png", scale = 1.5)
+
+
