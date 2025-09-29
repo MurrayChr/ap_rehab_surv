@@ -31,7 +31,7 @@ enc %>%
   ungroup() %>%
   group_by( n_sites ) %>% 
   summarise( n_birdyears = n() )
-# 219 / (219 + 14677) ~ 0.014, less than 2%
+# 219 / (219 + 14677) # ~ 0.014, less than 2%
 
 # gather all the multi-site bird-years
 multisite_birdyears <- enc %>%
