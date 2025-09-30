@@ -248,23 +248,25 @@ plot_grid(
 (plt_p_ad_A <- plot_estimates_by_site_year(fit, "p_ad_A") +
     theme(
       legend.position = "inside",
-      legend.position.inside = c(0.8, 0.175)
+      legend.position.inside = c(0.725, 0.225)
     ) +
     labs(
       title = "Detection of trap-aware adults"
     ))
 (plt_p_ad_U <- plot_estimates_by_site_year(fit, "p_ad_U") +
     theme(
-      legend.position = "inside",
-      legend.position.inside = c(0.8, 0.175)
+      # legend.position = "inside",
+      # legend.position.inside = c(0.8, 0.175)
+      legend.position = "none"
     ) +
     labs(
       title = "Detection of trap-unaware adults"
     ))
 (plt_p_ad_N <- plot_estimates_by_site_year(fit, "p_ad_N") +
     theme(
-      legend.position = "inside",
-      legend.position.inside = c(0.75, 0.175)
+      # legend.position = "inside",
+      # legend.position.inside = c(0.75, 0.175)
+      legend.position = "none"
     ) +
     labs(
       title = "Detection of newly-matured adults"
@@ -272,11 +274,18 @@ plot_grid(
 (plt_p_im <- plot_estimates_by_site_year(fit, "p_im") +
     theme(
       legend.position = "inside",
-      legend.position.inside = c(0.8, 0.775)
+      legend.position.inside = c(0.325, 0.775)
     ) +
     labs(
       title = "Detection of immatures"
     ))
+# combine detection plots
+plot_grid(
+  plt_p_ad_A, plt_p_ad_U, plt_p_ad_N, plt_p_im,
+  nrow = 2, ncol = 2, labels = "auto"
+)
+# ggsave("figs/05a_detection_estimates.png", height = 8, width = 12)
+
 
 # posteriors for hand-rearing coefficient (logit scale)
 plt_hr_diffs <- fit$draws(c("hr_jv", "hr_ad"), format = "df") %>%
