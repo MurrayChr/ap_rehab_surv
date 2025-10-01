@@ -36,12 +36,12 @@ Here is the correspondence between the model names in the manuscript and the fil
 | 07 | $\boldsymbol{\mathcal{M}}_{\text{Stony}}^{\text{hr}}$ | yes | - | yes | no | multi-age, single-site model fit to a subset of data consisting of birds marked as juveniles at Stony |
 | 08 | - | yes | yes| yes | no | estimates survival separately for each combination of site, age class, year and hand-rearing level |
 
-For the first six of these models there are a few files associated with each:
+For the first five of these models there are a few files associated with each:
 - Models 01 to 03 each have a file to fit the model (e.g. `01a_fit_*`), a file containing functions to simulate replicate data under the model (e.g. `01b_fn_sim_rep_data_*`), and a file to do posterior predictive checking of the model (e.g. `01c_ppc_*`).
 - Models 04 and 05 each have a file to fit the model, a file containing functions to simulate data under the model, and a file to evaluate the model using simulation (e.g. `04c_sim_*`). 
 - Model 04 has two model fitting files, one using the EPM likelihood and one the HHMM likelihood
 
-For the last two models there are only files to fit the model.
+For the last three models there are only files to fit the model.
 
 
 
