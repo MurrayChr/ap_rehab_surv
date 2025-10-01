@@ -1,6 +1,6 @@
 ### Stan models
 
-This folder contains Stan code for all the mark-recapture models, plus one model `00_multinomial_mixture.stan` used in the goodness-of-fit test of trap-dependence (M.ITEC). The file prefices correspond to those of the R scripts where the mark-reacapture models are fit:
+This folder contains Stan code for all the mark-recapture models, plus one model `00_multinomial_mixture.stan` used in the goodness-of-fit test of trap-dependence (M.ITEC). The file prefices correspond to those of the R scripts where the mark-recapture models are fit:
 
 | File prefix | Model | Trap-dependence | Transience | Hand-rearing | Immature |  Further description |
 | :----: | :-----------: | :-------: | :-------: |:-------: |:-------: | :----------- |
