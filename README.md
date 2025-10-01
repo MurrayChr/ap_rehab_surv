@@ -1,9 +1,3 @@
-## ap_rehab_surv
+## Survival in hand-reared African Penguins
 
-Estimating survival effects of rehabilitating chicks in African Penguins using mark-recapture data.
-
-### Naming conventions
-
-Every R script has a unique prefix e.g. 01c, and all outputs (figures, models etc.)
-of a script share the same prefix, so that they can be traced back to the code 
-that created them
+This repository contains data and code for the case study in *Computationally efficient Bayesian capture-mark-recapture models with transients, applied to survival of hand-reared African Penguins*. We compare juvenile and adult survival between hand-reared and wild-raised African Penguins, estimated from mark-recapture data.
